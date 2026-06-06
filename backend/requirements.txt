@@ -1,0 +1,20 @@
+fastapi
+uvicorn[standard]
+sqlalchemy
+psycopg2-binary
+python-dotenv
+alembic
+redis
+python-jose[cryptography]
+passlib[bcrypt]
+bcrypt<4.1
+pydantic[email]
+pydantic-settings
+httpx
+python-multipart
+# ML / Donor Ranking
+xgboost
+scikit-learn
+numpy
+pandas
+joblib
