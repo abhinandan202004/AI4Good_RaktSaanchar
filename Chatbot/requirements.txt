@@ -1,0 +1,37 @@
+# FastAPI
+fastapi
+uvicorn[standard]
+
+# Environment Variables
+python-dotenv
+
+# LLM
+mistralai
+
+# Translation
+sarvamai
+
+# RAG
+langchain
+langchain-community
+faiss-cpu
+sentence-transformers
+
+# Database
+sqlalchemy
+psycopg2-binary
+
+# Cache
+redis
+
+# Real-time Chat
+python-socketio
+fastapi-socketio
+
+# Utilities
+pydantic
+requests
+
+# Optional
+numpy<2.0,>=1.17.3
+pandas

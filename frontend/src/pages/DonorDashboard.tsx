@@ -94,7 +94,7 @@ export const DonorDashboard: React.FC = () => {
       setActiveUrgent(urgentPending);
       
       const hasAssignment = reqResp.data.items.some(
-        (r: BloodRequest) => r.status === 'accepted' && r.assigned_donor_id === donorProfile.id
+        (r: BloodRequest) => r.status === 'accepted' && r.assigned_donor_id === donorProfile?.id
       );
       setHasActiveAssignment(hasAssignment);
 

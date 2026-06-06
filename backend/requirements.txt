@@ -19,3 +19,11 @@ numpy
 pandas
 joblib
 boto3
+
+# Chatbot & RAG
+mistralai
+sarvamai
+langchain
+langchain-community
+faiss-cpu
+sentence-transformers

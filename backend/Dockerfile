@@ -27,6 +27,9 @@ RUN pip install --no-cache-dir \
 RUN pip install --no-cache-dir numpy pandas scikit-learn
 RUN pip install --no-cache-dir xgboost
 
+# ── Step 3: Chatbot & RAG deps ────────────────────────────────────────────────
+RUN pip install --no-cache-dir mistralai sarvamai langchain langchain-community faiss-cpu sentence-transformers
+
 COPY . .
 
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]

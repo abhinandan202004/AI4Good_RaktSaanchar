@@ -10,6 +10,7 @@ import { BloodBankDashboard } from './pages/BloodBankDashboard';
 import { CoordinatorDashboard } from './pages/CoordinatorDashboard';
 import { ChatRoom } from './pages/ChatRoom';
 import { Leaderboard } from './pages/Leaderboard';
+import { ChatbotWidget } from './components/ChatbotWidget';
 
 // Core Layout Wrapper for authenticated routes
 const DashboardLayout: React.FC = () => {
@@ -37,6 +38,7 @@ const DashboardLayout: React.FC = () => {
       <main className="flex-1 overflow-y-auto p-6">
         <Outlet />
       </main>
+      <ChatbotWidget />
     </div>
   );
 };
