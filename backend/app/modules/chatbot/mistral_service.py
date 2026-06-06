@@ -1,5 +1,8 @@
 import os
-from mistralai import Mistral
+try:
+    from mistralai import Mistral
+except ImportError:
+    from mistralai.client import Mistral
 import logging
 
 logger = logging.getLogger(__name__)
