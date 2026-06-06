@@ -27,7 +27,7 @@ class BloodRequestService:
             req.top_donors = ml_service.rank_donors(
                 db=self.repo.db,
                 request_id=req.id,
-                limit=20
+                limit=10
             )
         except Exception:
             req.top_donors = []

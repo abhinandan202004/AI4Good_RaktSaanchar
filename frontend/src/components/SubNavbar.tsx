@@ -56,16 +56,16 @@ export const SubNavbar: React.FC = () => {
   return (
     <div className="glass-nav border-b sticky top-[60px] z-40">
       <div className="max-w-[1600px] mx-auto px-6">
-        <ul className="flex flex-wrap -mb-px text-xs font-bold text-slate-500 dark:text-slate-400 gap-6">
+        <ul className="flex flex-wrap -mb-px gap-6">
           {menuItems.map((item) => (
             <li key={item.to}>
               <NavLink
                 to={item.to}
                 className={({ isActive }) =>
-                  `inline-flex items-center gap-1.5 py-3.5 px-0.5 border-b-2 transition-all duration-200 ${
+                  `inline-flex items-center gap-1.5 py-3.5 px-0.5 border-b-2 navbar-link-token ${
                     isActive
-                      ? 'border-rose-500 text-rose-500 dark:text-rose-400'
-                      : 'border-transparent hover:text-slate-700 dark:hover:text-slate-200 hover:border-slate-350 dark:hover:border-slate-800'
+                      ? 'border-rose-500 text-rose-500 dark:text-rose-400 font-semibold'
+                      : 'border-transparent hover:text-slate-900 dark:hover:text-slate-100 hover:border-slate-350 dark:hover:border-slate-800'
                   }`
                 }
               >

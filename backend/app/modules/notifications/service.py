@@ -151,6 +151,25 @@ class NotificationService:
         coord_title = f"📢 New Request Created: #{request.id} ({blood_group.value})"
         coord_body = f"A new request for {units} unit(s) of {blood_group.value} has been created at {hospital} ({urgency.upper()} Urgency)."
         
+        # Email & SMS templates for Coordinator
+        coord_email_subject = f"RaktSaanchar: New Request Created #{request.id} ({blood_group.value})"
+        coord_email_body = (
+            f"Dear Coordinator/Admin,\n\n"
+            f"A new blood request has been submitted to the system.\n\n"
+            f"Request Details:\n"
+            f"  - Request ID: #{request.id}\n"
+            f"  - Blood Group Required: {blood_group.value}\n"
+            f"  - Units Required: {units}\n"
+            f"  - Urgency Level: {urgency.upper()}\n"
+            f"  - Location/Hospital: {hospital}\n"
+            f"  - City: {patient_city}\n\n"
+            f"The system has automatically calculated the top matching donors and initiated notifications. "
+            f"Please log in to the Coordinator Dashboard to review the matches and manage the dispatch status.\n\n"
+            f"Best regards,\n"
+            f"RaktSaanchar System"
+        )
+        coord_sms_message = f"RaktSaanchar: New request #{request.id} ({blood_group.value}) created at {hospital} ({urgency.upper()} Urgency)."
+
         coordinators = (
             self.db.query(User)
             .filter(User.role.in_([UserRole.coordinator, UserRole.admin]))
@@ -161,8 +180,10 @@ class NotificationService:
             SnsService.send_sns_notification(
                 phone=c.phone,
                 email=c.email,
-                subject=coord_title,
-                message=coord_body
+                subject=coord_email_subject,
+                message=coord_body,
+                sms_message=coord_sms_message,
+                email_body=coord_email_body
             )
 
         # 2. ALWAYS rank compatible donors using the ML model and notify them
@@ -175,15 +196,46 @@ class NotificationService:
             patient_city=patient_city,
             patient_latitude=patient_lat,
             patient_longitude=patient_lon,
-            limit=20,
+            limit=10,
         )
         
         if is_urgent:
             donor_title = f"🚨 URGENT Blood Request: {blood_group.value}"
             donor_body = f"An urgent request for {units} unit(s) of {blood_group.value} has been created at {hospital}."
+            donor_email_subject = f"RaktSaanchar: URGENT Blood Request Match ({blood_group.value})"
+            donor_email_body = (
+                f"Dear Donor,\n\n"
+                f"There is an URGENT blood request match in your area.\n\n"
+                f"Request Details:\n"
+                f"  - Blood Group Required: {blood_group.value}\n"
+                f"  - Units Required: {units}\n"
+                f"  - Urgency Level: {urgency.upper()}\n"
+                f"  - Location/Hospital: {hospital}\n\n"
+                f"You have been ranked as one of our top matched candidates. "
+                f"Please open the RaktSaanchar application immediately to accept this request and coordinate donation details.\n\n"
+                f"Your quick response can save a life!\n\n"
+                f"Best regards,\n"
+                f"The RaktSaanchar Team"
+            )
+            donor_sms_message = f"RaktSaanchar: URGENT {blood_group.value} request at {hospital}. Open app to accept!"
         else:
             donor_title = f"📅 Donation Match Opportunity: {blood_group.value}"
             donor_body = f"{units} unit(s) of {blood_group.value} requested at {hospital}. You are matched as a top candidate. Open app to schedule!"
+            donor_email_subject = f"RaktSaanchar: Blood Donation Match Opportunity ({blood_group.value})"
+            donor_email_body = (
+                f"Dear Donor,\n\n"
+                f"A new blood donation opportunity matching your profile has been created.\n\n"
+                f"Request Details:\n"
+                f"  - Blood Group Required: {blood_group.value}\n"
+                f"  - Units Required: {units}\n"
+                f"  - Urgency Level: {urgency.upper()}\n"
+                f"  - Location/Hospital: {hospital}\n\n"
+                f"Please open the RaktSaanchar application to review the request and schedule a donation.\n\n"
+                f"Thank you for your continued support in helping save lives.\n\n"
+                f"Best regards,\n"
+                f"The RaktSaanchar Team"
+            )
+            donor_sms_message = f"RaktSaanchar: {units} unit(s) of {blood_group.value} requested at {hospital}. You are matched as a top candidate. Open app to schedule!"
         
         for rd in ranked_donors:
             if rd["blood_group"] not in compatible_groups:
@@ -205,8 +257,10 @@ class NotificationService:
                     SnsService.send_sns_notification(
                         phone=donor_user.phone,
                         email=donor_user.email,
-                        subject=donor_title,
-                        message=donor_body
+                        subject=donor_email_subject,
+                        message=donor_body,
+                        sms_message=donor_sms_message,
+                        email_body=donor_email_body
                     )
 
         # 3. Handle Blood Bank notifications
@@ -214,6 +268,24 @@ class NotificationService:
             # Urgent: Alert blood banks within 100 Km
             from app.modules.blood_bank.models import BloodBankProfile
             banks = self.db.query(BloodBankProfile).all()
+            
+            bank_email_subject = f"RaktSaanchar: URGENT Blood Bank Alert ({blood_group.value})"
+            bank_email_body = (
+                f"Dear Blood Bank Administrator,\n\n"
+                f"An URGENT blood request has been created within your operating radius (100 Km).\n\n"
+                f"Request Details:\n"
+                f"  - Request ID: #{request.id}\n"
+                f"  - Blood Group Required: {blood_group.value}\n"
+                f"  - Units Required: {units}\n"
+                f"  - Urgency Level: {urgency.upper()}\n"
+                f"  - Location/Hospital: {hospital}\n\n"
+                f"Please check your current inventory and coordinate if you can supply compatible units. "
+                f"Log in to your Dashboard to accept and manage this request.\n\n"
+                f"Best regards,\n"
+                f"The RaktSaanchar Team"
+            )
+            bank_sms_message = f"RaktSaanchar: Urgent request for {blood_group.value} at {hospital} within your area. Open app to view."
+
             for b in banks:
                 in_range = False
                 if patient_lat is not None and patient_lon is not None and b.latitude is not None and b.longitude is not None:
@@ -232,8 +304,10 @@ class NotificationService:
                         SnsService.send_sns_notification(
                             phone=bank_user.phone,
                             email=bank_user.email,
-                            subject=bank_title,
-                            message=donor_body
+                            subject=bank_email_subject,
+                            message=donor_body,
+                            sms_message=bank_sms_message,
+                            email_body=bank_email_body
                         )
         else:
             # Non-urgent: Check blood bank inventories within 100 Km first
@@ -260,6 +334,7 @@ class NotificationService:
                     )
                     .first()
                 )
+                
                 if matching_inventory:
                     # Notify the patient that compatible blood is available at a nearby blood bank
                     self.send_to_user(
@@ -277,14 +352,33 @@ class NotificationService:
                         bank_body,
                         NotificationType.alert,
                     )
+                    
+                    bank_email_subject = f"RaktSaanchar: Matching Blood Request in Your Area ({blood_group.value})"
+                    bank_email_body = (
+                        f"Dear Blood Bank Administrator,\n\n"
+                        f"A new blood request has been submitted in your area. Our system indicates you have compatible stock available ({blood_group.value}).\n\n"
+                        f"Request Details:\n"
+                        f"  - Request ID: #{request.id}\n"
+                        f"  - Blood Group Required: {blood_group.value}\n"
+                        f"  - Units Required: {units}\n"
+                        f"  - Urgency Level: {urgency.upper()}\n"
+                        f"  - Location/Hospital: {hospital}\n\n"
+                        f"Please review your dashboard and prepare the dispatch if accepted.\n\n"
+                        f"Best regards,\n"
+                        f"The RaktSaanchar Team"
+                    )
+                    bank_sms_message = f"RaktSaanchar: Compatible stock found for request at {hospital}. Open dashboard to review."
+
                     # Dispatch via Amazon SNS
                     bank_user = self.db.query(User).filter(User.id == matching_inventory.blood_bank_id).first()
                     if bank_user:
                         SnsService.send_sns_notification(
                             phone=bank_user.phone,
                             email=bank_user.email,
-                            subject=bank_title,
-                            message=bank_body
+                            subject=bank_email_subject,
+                            message=bank_body,
+                            sms_message=bank_sms_message,
+                            email_body=bank_email_body
                         )
 
     def notify_request_matched(self, donor_user_id: int, patient_user_id: int):

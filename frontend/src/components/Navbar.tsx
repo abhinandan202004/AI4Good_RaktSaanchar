@@ -88,7 +88,7 @@ export const Navbar: React.FC = () => {
           <Droplets className="text-rose-500 w-5.5 h-5.5 animate-pulse" />
         </div>
         <span className="text-lg font-black tracking-tight text-slate-800 dark:text-slate-100">
-          Rakta<span className="text-rose-500">Sanchaar</span>
+          Rakta<span className="hero-highlight-token">Sanchaar</span>
         </span>
       </div>
 
@@ -99,7 +99,7 @@ export const Navbar: React.FC = () => {
           href="https://github.com/abhinandan202004/Rakt" 
           target="_blank" 
           rel="noopener noreferrer" 
-          className="flex items-center gap-1.5 px-3 py-1.5 border border-slate-200 dark:border-slate-800 hover:bg-slate-100/50 dark:hover:bg-slate-900/50 rounded-xl text-xs font-bold transition-all text-slate-600 dark:text-slate-300"
+          className="flex items-center gap-1.5 px-3 py-1.5 border border-slate-200 dark:border-slate-800 hover:bg-slate-100/50 dark:hover:bg-slate-900/50 rounded-xl navbar-link-token"
         >
           <Code2 className="w-3.5 h-3.5" />
           <span className="hidden sm:inline">Source code</span>

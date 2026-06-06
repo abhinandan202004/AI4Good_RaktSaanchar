@@ -277,235 +277,268 @@ export const LoginRegister: React.FC = () => {
   return (
     <div className="min-h-[calc(100vh-60px)] flex items-center justify-center p-6 relative">
       
-      <div className="max-w-5xl w-full grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
+      <div className="max-w-6xl w-full grid grid-cols-1 md:grid-cols-12 gap-10 items-center">
         
-        {/* Main Authentication Card */}
-        <div className="glass-panel border border-slate-200/50 dark:border-slate-800/40 p-8 md:col-span-7">
-          <h2 className="text-2xl font-black text-slate-800 dark:text-slate-100 flex items-center gap-2">
-            <Sparkles className="text-rose-500 w-6 h-6 animate-pulse" />
-            {isRegister ? 'Create Account' : 'Welcome Back'}
-          </h2>
-          <p className="text-xs text-slate-400 dark:text-slate-500 font-bold mb-6 mt-1">
-            {isRegister ? 'Join our life-saving donation network' : 'Log in to manage and accept blood requests'}
+        {/* Hero Section */}
+        <div className="md:col-span-6 flex flex-col justify-center pr-6 py-8 md:sticky md:top-8 gap-5 animate-fade-in">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-rose-500/10 dark:bg-rose-500/20 rounded-full text-xs font-black text-rose-500 uppercase tracking-widest w-fit border border-rose-500/10">
+            <Sparkles className="w-3.5 h-3.5 animate-pulse" />
+            AI-Driven Blood Network
+          </div>
+          <h1 className="hero-heading-token">
+            Next-gen dispatch, powered by <span className="hero-highlight-token">RaktSaanchar</span>
+          </h1>
+          <p className="hero-subtitle-token">
+            A decentralized, real-time coordination platform connecting patients, donors, and blood banks. Powered by predictive XGBoost donor-ranking and automated Amazon SNS alerts.
           </p>
 
-          {error && (
-            <div className="bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 text-xs p-3 rounded-xl font-bold mb-4">
-              <span>{error}</span>
+          {/* Quick Platform Stats */}
+          <div className="grid grid-cols-3 gap-4 mt-4">
+            <div className="glass-card p-4 border border-rose-500/10 bg-white/20 dark:bg-slate-900/10">
+              <span className="block text-2xl font-black text-rose-500">98%</span>
+              <span className="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 tracking-wider">Match Rate</span>
             </div>
-          )}
-          {success && (
-            <div className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs p-3 rounded-xl font-bold mb-4 flex items-center gap-2">
-              <CheckCircle2 className="w-4.5 h-4.5" />
-              <span>{success}</span>
+            <div className="glass-card p-4 border border-rose-500/10 bg-white/20 dark:bg-slate-900/10">
+              <span className="block text-2xl font-black text-rose-500">&lt;10m</span>
+              <span className="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 tracking-wider">Response Time</span>
             </div>
-          )}
+            <div className="glass-card p-4 border border-rose-500/10 bg-white/20 dark:bg-slate-900/10">
+              <span className="block text-2xl font-black text-rose-500">20+</span>
+              <span className="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 tracking-wider">Blood Banks</span>
+            </div>
+          </div>
+        </div>
 
-          <form onSubmit={handleAuth} className="flex flex-col gap-4">
-            {isRegister && (
+        {/* Right Stacked Column */}
+        <div className="md:col-span-6 flex flex-col gap-6">
+          
+          {/* Main Authentication Card */}
+          <div className="glass-panel border border-slate-200/50 dark:border-slate-800/40 p-8">
+            <h2 className="text-2xl font-black text-slate-800 dark:text-slate-100 flex items-center gap-2">
+              <Sparkles className="text-rose-500 w-6 h-6 animate-pulse" />
+              {isRegister ? 'Create Account' : 'Welcome Back'}
+            </h2>
+            <p className="text-xs text-slate-400 dark:text-slate-500 font-bold mb-6 mt-1">
+              {isRegister ? 'Join our life-saving donation network' : 'Log in to manage and accept blood requests'}
+            </p>
+
+            {error && (
+              <div className="bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 text-xs p-3 rounded-xl font-bold mb-4">
+                <span>{error}</span>
+              </div>
+            )}
+            {success && (
+              <div className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs p-3 rounded-xl font-bold mb-4 flex items-center gap-2">
+                <CheckCircle2 className="w-4.5 h-4.5" />
+                <span>{success}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleAuth} className="flex flex-col gap-4">
+              {isRegister && (
+                <div>
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
+                    Full Name
+                  </label>
+                  <div className="relative">
+                    <UserIcon className="absolute left-3.5 top-3 text-slate-400 w-4.5 h-4.5" />
+                    <input
+                      type="text"
+                      placeholder="Jane Doe"
+                      className="w-full bg-white/40 dark:bg-slate-900/30 border border-slate-200 dark:border-slate-800 focus:border-rose-500 dark:focus:border-rose-500 focus:ring-1 focus:ring-rose-500 outline-none rounded-xl pl-11 pr-3 py-2 text-sm transition-all text-slate-800 dark:text-slate-100"
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      required={isRegister}
+                    />
+                  </div>
+                </div>
+              )}
+
               <div>
                 <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
-                  Full Name
+                  Email Address
                 </label>
                 <div className="relative">
-                  <UserIcon className="absolute left-3.5 top-3 text-slate-400 w-4.5 h-4.5" />
+                  <Mail className="absolute left-3.5 top-3 text-slate-400 w-4.5 h-4.5" />
                   <input
-                    type="text"
-                    placeholder="Jane Doe"
+                    type="email"
+                    placeholder="email@example.com"
                     className="w-full bg-white/40 dark:bg-slate-900/30 border border-slate-200 dark:border-slate-800 focus:border-rose-500 dark:focus:border-rose-500 focus:ring-1 focus:ring-rose-500 outline-none rounded-xl pl-11 pr-3 py-2 text-sm transition-all text-slate-800 dark:text-slate-100"
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    required={isRegister}
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
                   />
                 </div>
               </div>
-            )}
 
-            <div>
-              <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
-                Email Address
-              </label>
-              <div className="relative">
-                <Mail className="absolute left-3.5 top-3 text-slate-400 w-4.5 h-4.5" />
-                <input
-                  type="email"
-                  placeholder="email@example.com"
-                  className="w-full bg-white/40 dark:bg-slate-900/30 border border-slate-200 dark:border-slate-800 focus:border-rose-500 dark:focus:border-rose-500 focus:ring-1 focus:ring-rose-500 outline-none rounded-xl pl-11 pr-3 py-2 text-sm transition-all text-slate-800 dark:text-slate-100"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
-                Password
-              </label>
-              <div className="relative">
-                <Lock className="absolute left-3.5 top-3 text-slate-400 w-4.5 h-4.5" />
-                <input
-                  type="password"
-                  placeholder="••••••••"
-                  className="w-full bg-white/40 dark:bg-slate-900/30 border border-slate-200 dark:border-slate-800 focus:border-rose-500 dark:focus:border-rose-500 focus:ring-1 focus:ring-rose-500 outline-none rounded-xl pl-11 pr-3 py-2 text-sm transition-all text-slate-800 dark:text-slate-100"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
-              </div>
-            </div>
-
-            {isRegister && (
-              <>
-                <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
-                    Choose Role
-                  </label>
-                  <select
-                    className="w-full bg-white/40 dark:bg-slate-900/30 border border-slate-200 dark:border-slate-800 focus:border-rose-500 dark:focus:border-rose-500 focus:ring-1 focus:ring-rose-500 outline-none rounded-xl px-3 py-2.5 text-xs font-semibold text-slate-800 dark:text-slate-100"
-                    value={role}
-                    onChange={(e: any) => setRole(e.target.value)}
-                  >
-                    <option value="patient">Patient (Needs Blood)</option>
-                    <option value="donor">Donor (Donates Blood)</option>
-                    <option value="blood_bank">Blood Bank Desk</option>
-                    <option value="coordinator">Coordinator Desk</option>
-                  </select>
+              <div>
+                <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
+                  Password
+                </label>
+                <div className="relative">
+                  <Lock className="absolute left-3.5 top-3 text-slate-400 w-4.5 h-4.5" />
+                  <input
+                    type="password"
+                    placeholder="••••••••"
+                    className="w-full bg-white/40 dark:bg-slate-900/30 border border-slate-200 dark:border-slate-800 focus:border-rose-500 dark:focus:border-rose-500 focus:ring-1 focus:ring-rose-500 outline-none rounded-xl pl-11 pr-3 py-2 text-sm transition-all text-slate-800 dark:text-slate-100"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                  />
                 </div>
+              </div>
 
-                {(role === 'patient' || role === 'donor') && (
+              {isRegister && (
+                <>
                   <div>
                     <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
-                      Blood Group <span className="text-rose-500">*</span>
+                      Choose Role
                     </label>
                     <select
                       className="w-full bg-white/40 dark:bg-slate-900/30 border border-slate-200 dark:border-slate-800 focus:border-rose-500 dark:focus:border-rose-500 focus:ring-1 focus:ring-rose-500 outline-none rounded-xl px-3 py-2.5 text-xs font-semibold text-slate-800 dark:text-slate-100"
-                      value={bloodGroup}
-                      onChange={(e) => setBloodGroup(e.target.value)}
-                      required
+                      value={role}
+                      onChange={(e: any) => setRole(e.target.value)}
                     >
-                      <option value="">Select Blood Group</option>
-                      <option value="A+">A+</option>
-                      <option value="A-">A-</option>
-                      <option value="B+">B+</option>
-                      <option value="B-">B-</option>
-                      <option value="AB+">AB+</option>
-                      <option value="AB-">AB-</option>
-                      <option value="O+">O+</option>
-                      <option value="O-">O-</option>
+                      <option value="patient">Patient (Needs Blood)</option>
+                      <option value="donor">Donor (Donates Blood)</option>
+                      <option value="blood_bank">Blood Bank Desk</option>
+                      <option value="coordinator">Coordinator Desk</option>
                     </select>
                   </div>
-                )}
 
-                {role !== 'coordinator' && (
-                  <div className="border border-slate-200/40 dark:border-slate-800/40 p-4.5 rounded-2xl bg-slate-100/30 dark:bg-slate-900/20">
-                    <div className="flex justify-between items-center mb-3">
-                      <span className="text-xs font-extrabold flex items-center gap-1.5 text-slate-700 dark:text-slate-350">
-                        <MapPin className="text-rose-500 w-4 h-4" />
-                        Geolocation Coordinates
-                      </span>
-                      <button
-                        type="button"
-                        className="px-3 py-1 bg-rose-500 hover:bg-rose-600 text-white rounded-lg text-[10px] font-bold uppercase transition-all"
-                        onClick={detectLocation}
-                        disabled={gettingLocation}
+                  {(role === 'patient' || role === 'donor') && (
+                    <div>
+                      <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
+                        Blood Group <span className="text-rose-500">*</span>
+                      </label>
+                      <select
+                        className="w-full bg-white/40 dark:bg-slate-900/30 border border-slate-200 dark:border-slate-800 focus:border-rose-500 dark:focus:border-rose-500 focus:ring-1 focus:ring-rose-500 outline-none rounded-xl px-3 py-2.5 text-xs font-semibold text-slate-800 dark:text-slate-100"
+                        value={bloodGroup}
+                        onChange={(e) => setBloodGroup(e.target.value)}
+                        required
                       >
-                        {gettingLocation ? 'Detecting...' : 'Detect'}
-                      </button>
+                        <option value="">Select Blood Group</option>
+                        <option value="A+">A+</option>
+                        <option value="A-">A-</option>
+                        <option value="B+">B+</option>
+                        <option value="B-">B-</option>
+                        <option value="AB+">AB+</option>
+                        <option value="AB-">AB-</option>
+                        <option value="O+">O+</option>
+                        <option value="O-">O-</option>
+                      </select>
                     </div>
+                  )}
 
-                    {locationError && <p className="text-[10px] text-rose-500 font-bold mb-2">{locationError}</p>}
-
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <input
-                          type="number"
-                          step="any"
-                          placeholder="Latitude"
-                          className="w-full bg-white/45 dark:bg-slate-900/35 border border-slate-200/50 dark:border-slate-800/55 focus:border-rose-500 dark:focus:border-rose-500 focus:ring-1 focus:ring-rose-500 outline-none rounded-lg px-2.5 py-1.5 text-xs text-slate-800 dark:text-slate-100"
-                          value={latitude || ''}
-                          onChange={(e) => setLatitude(parseFloat(e.target.value))}
-                          required
-                        />
+                  {role !== 'coordinator' && (
+                    <div className="border border-slate-200/40 dark:border-slate-800/40 p-4.5 rounded-2xl bg-slate-100/30 dark:bg-slate-900/20">
+                      <div className="flex justify-between items-center mb-3">
+                        <span className="text-xs font-extrabold flex items-center gap-1.5 text-slate-700 dark:text-slate-350">
+                          <MapPin className="text-rose-500 w-4 h-4" />
+                          Geolocation Coordinates
+                        </span>
+                        <button
+                          type="button"
+                          className="px-3 py-1 bg-rose-500 hover:bg-rose-600 text-white rounded-lg text-[10px] font-bold uppercase transition-all"
+                          onClick={detectLocation}
+                          disabled={gettingLocation}
+                        >
+                          {gettingLocation ? 'Detecting...' : 'Detect'}
+                        </button>
                       </div>
-                      <div>
-                        <input
-                          type="number"
-                          step="any"
-                          placeholder="Longitude"
-                          className="w-full bg-white/45 dark:bg-slate-900/35 border border-slate-200/50 dark:border-slate-800/55 focus:border-rose-500 dark:focus:border-rose-500 focus:ring-1 focus:ring-rose-500 outline-none rounded-lg px-2.5 py-1.5 text-xs text-slate-800 dark:text-slate-100"
-                          value={longitude || ''}
-                          onChange={(e) => setLongitude(parseFloat(e.target.value))}
-                          required
-                        />
+
+                      {locationError && <p className="text-[10px] text-rose-500 font-bold mb-2">{locationError}</p>}
+
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <input
+                            type="number"
+                            step="any"
+                            placeholder="Latitude"
+                            className="w-full bg-white/45 dark:bg-slate-900/35 border border-slate-200/50 dark:border-slate-800/55 focus:border-rose-500 dark:focus:border-rose-500 focus:ring-1 focus:ring-rose-500 outline-none rounded-lg px-2.5 py-1.5 text-xs text-slate-800 dark:text-slate-100"
+                            value={latitude || ''}
+                            onChange={(e) => setLatitude(parseFloat(e.target.value))}
+                            required
+                          />
+                        </div>
+                        <div>
+                          <input
+                            type="number"
+                            step="any"
+                            placeholder="Longitude"
+                            className="w-full bg-white/45 dark:bg-slate-900/35 border border-slate-200/50 dark:border-slate-800/55 focus:border-rose-500 dark:focus:border-rose-500 focus:ring-1 focus:ring-rose-500 outline-none rounded-lg px-2.5 py-1.5 text-xs text-slate-800 dark:text-slate-100"
+                            value={longitude || ''}
+                            onChange={(e) => setLongitude(parseFloat(e.target.value))}
+                            required
+                          />
+                        </div>
                       </div>
                     </div>
-                  </div>
-                )}
-              </>
-            )}
+                  )}
+                </>
+              )}
 
-            <button 
-              type="submit" 
-              className="w-full bg-rose-500 hover:bg-rose-600 text-white font-bold py-2.5 px-4 rounded-xl shadow-md transition-all text-xs uppercase tracking-wider mt-2 flex items-center justify-center gap-1.5" 
-              disabled={loading}
-            >
-              {loading && <div className="animate-spin rounded-full h-3.5 w-3.5 border-2 border-white/20 border-t-white"></div>}
-              {isRegister ? 'Sign Up' : 'Log In'}
-            </button>
-          </form>
-
-          {/* Divider */}
-          <div className="flex items-center justify-center my-6 gap-3 text-[10px] font-black uppercase tracking-wider text-slate-400">
-            <span className="h-[1px] bg-slate-200/50 dark:bg-slate-800/50 flex-1"></span>
-            <span>OR</span>
-            <span className="h-[1px] bg-slate-200/50 dark:bg-slate-800/50 flex-1"></span>
-          </div>
-
-          <p className="text-center text-xs font-semibold text-slate-500 dark:text-slate-400">
-            {isRegister ? 'Already have an account?' : "Don't have an account yet?"}{' '}
-            <button
-              type="button"
-              className="text-rose-500 hover:underline font-bold"
-              onClick={() => {
-                setIsRegister(!isRegister);
-                setError('');
-              }}
-            >
-              {isRegister ? 'Log In here' : 'Sign Up here'}
-            </button>
-          </p>
-        </div>
-
-        {/* Developer Quick Login Panel */}
-        <div className="glass-panel border border-slate-200/50 dark:border-slate-800/40 p-6 md:col-span-5 h-fit">
-          <h3 className="text-base font-extrabold text-slate-800 dark:text-slate-100 border-b border-slate-200/50 dark:border-slate-800/50 pb-3 flex items-center gap-1.5">
-            <Sparkles className="text-rose-500 w-4.5 h-4.5 animate-pulse" />
-            Dev Quick Login Desk
-          </h3>
-          <p className="text-[10px] text-slate-400 dark:text-slate-500 font-bold mb-4 mt-2 leading-normal">
-            Click any profile below to immediately log in. The desk will auto-register and seed coordinate profiles in the database if they don't already exist.
-          </p>
-
-          <div className="flex flex-col gap-2.5">
-            {devUsers.map((dev) => (
-              <button
-                key={dev.email}
-                type="button"
-                onClick={() => triggerQuickLogin(dev)}
+              <button 
+                type="submit" 
+                className="w-full bg-rose-500 hover:bg-rose-600 text-white font-bold py-2.5 px-4 rounded-xl shadow-md transition-all text-xs uppercase tracking-wider mt-2 flex items-center justify-center gap-1.5" 
                 disabled={loading}
-                className="flex items-center justify-between w-full border border-slate-200/50 dark:border-slate-800/50 bg-white/40 dark:bg-slate-900/10 hover:bg-rose-500/5 hover:border-rose-500/35 rounded-xl px-3.5 py-2.5 text-left transition-all duration-250 disabled:opacity-50"
               >
-                <div className="flex flex-col gap-0.5 leading-tight">
-                  <span className="text-xs text-slate-700 dark:text-slate-350 font-bold">{dev.title}</span>
-                  <span className="text-slate-400 dark:text-slate-500 text-[10px] font-semibold">{dev.email}</span>
-                </div>
-                <LogIn className="w-4 h-4 text-slate-400" />
+                {loading && <div className="animate-spin rounded-full h-3.5 w-3.5 border-2 border-white/20 border-t-white"></div>}
+                {isRegister ? 'Sign Up' : 'Log In'}
               </button>
-            ))}
+            </form>
+
+            {/* Divider */}
+            <div className="flex items-center justify-center my-6 gap-3 text-[10px] font-black uppercase tracking-wider text-slate-400">
+              <span className="h-[1px] bg-slate-200/50 dark:bg-slate-800/50 flex-1"></span>
+              <span>OR</span>
+              <span className="h-[1px] bg-slate-200/50 dark:bg-slate-800/50 flex-1"></span>
+            </div>
+
+            <p className="text-center text-xs font-semibold text-slate-500 dark:text-slate-400">
+              {isRegister ? 'Already have an account?' : "Don't have an account yet?"}{' '}
+              <button
+                type="button"
+                className="text-rose-500 hover:underline font-bold"
+                onClick={() => {
+                  setIsRegister(!isRegister);
+                  setError('');
+                }}
+              >
+                {isRegister ? 'Log In here' : 'Sign Up here'}
+              </button>
+            </p>
+          </div>
+
+          {/* Developer Quick Login Panel */}
+          <div className="glass-panel border border-slate-200/50 dark:border-slate-800/40 p-6 h-fit">
+            <h3 className="text-base font-extrabold text-slate-800 dark:text-slate-100 border-b border-slate-200/50 dark:border-slate-800/50 pb-3 flex items-center gap-1.5">
+              <Sparkles className="text-rose-500 w-4.5 h-4.5 animate-pulse" />
+              Dev Quick Login Desk
+            </h3>
+            <p className="text-[10px] text-slate-400 dark:text-slate-500 font-bold mb-4 mt-2 leading-normal">
+              Click any profile below to immediately log in. The desk will auto-register and seed coordinate profiles in the database if they don't already exist.
+            </p>
+
+            <div className="flex flex-col gap-2.5">
+              {devUsers.map((dev) => (
+                <button
+                  key={dev.email}
+                  type="button"
+                  onClick={() => triggerQuickLogin(dev)}
+                  disabled={loading}
+                  className="flex items-center justify-between w-full border border-slate-200/50 dark:border-slate-800/50 bg-white/40 dark:bg-slate-900/10 hover:bg-rose-500/5 hover:border-rose-500/35 rounded-xl px-3.5 py-2.5 text-left transition-all duration-250 disabled:opacity-50"
+                >
+                  <div className="flex flex-col gap-0.5 leading-tight">
+                    <span className="text-xs text-slate-700 dark:text-slate-350 font-bold">{dev.title}</span>
+                    <span className="text-slate-400 dark:text-slate-500 text-[10px] font-semibold">{dev.email}</span>
+                  </div>
+                  <LogIn className="w-4 h-4 text-slate-400" />
+                </button>
+              ))}
+            </div>
           </div>
         </div>
-
       </div>
     </div>
   );

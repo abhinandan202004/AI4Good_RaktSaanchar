@@ -37,12 +37,17 @@ try:
     print(" 1. RESET AND SETUP MOCK USERS & PROFILES")
     print("================================================================================")
     # Clear existing requests, donors, banks, and coordinators for a clean test env
-    db.query(BloodRequest).delete()
-    db.query(Donor).delete()
-    db.query(BloodBankProfile).delete()
-    db.query(Patient).delete()
-    db.query(User).delete()
-    db.commit()
+    for model in [ChatMessage, ChatRoom, Notification, BloodValidationReport, BloodUnit, BloodInventory, BloodRequest, DonorBadge, Badge, Donor, BloodBankProfile, Patient, User]:
+        try:
+            db.query(model).delete()
+            db.commit()
+        except Exception:
+            db.rollback()
+            try:
+                db.execute(f"TRUNCATE TABLE {model.__tablename__} CASCADE;")
+                db.commit()
+            except Exception:
+                db.rollback()
 
     # Create Patient, Donor, Blood Bank, and Coordinator
     patient_user = User(email="patient_sns@test.com", phone="+1111111111", hashed_password="pw", full_name="Patient SNS", role=UserRole.patient)

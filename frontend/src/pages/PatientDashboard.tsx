@@ -70,7 +70,7 @@ export const PatientDashboard: React.FC = () => {
 
   const fetchRequests = async () => {
     try {
-      const resp = await api.get<BloodRequest[]>('/requests/my');
+      const resp = await api.get<BloodRequest[]>('/requests/mine');
       setRequests(resp.data);
     } catch (err) {
       console.error('Failed to load requests:', err);
