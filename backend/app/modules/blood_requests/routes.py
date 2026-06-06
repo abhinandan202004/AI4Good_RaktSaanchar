@@ -135,6 +135,15 @@ def fulfil(
     return svc.fulfil(req_id)
 
 
+@router.patch("/{req_id}/confirm-donation", response_model=BloodRequestOut)
+def confirm_donation(
+    req_id: int,
+    svc: BloodRequestService = Depends(_svc),
+    current_user=Depends(require_roles("blood_bank", "admin")),
+):
+    return svc.confirm_donation(req_id, current_user.id)
+
+
 # ── Coordinator ───────────────────────────────────────────────────────────────
 
 @router.get("/", response_model=BloodRequestListOut)

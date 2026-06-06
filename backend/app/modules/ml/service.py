@@ -165,10 +165,19 @@ def rank_donors(
                 "Either request_id or both patient_blood_group and urgency must be provided"
             )
 
-    # Fetch all available donors
+    # Fetch all available and eligible donors (cooldown check)
+    from datetime import datetime, timedelta, timezone
+    from sqlalchemy import or_
+    cooldown_limit = datetime.now(timezone.utc) - timedelta(days=90)
     donors: List[Donor] = (
         db.query(Donor)
-        .filter(Donor.is_available == True)
+        .filter(
+            Donor.is_available == True,
+            or_(
+                Donor.last_donated_at == None,
+                Donor.last_donated_at <= cooldown_limit
+            )
+        )
         .all()
     )
 
@@ -235,10 +244,17 @@ def get_geojson_map_data(db: Session) -> dict:
     """
     features = []
 
-    # 1. Fetch available donors with coordinates
+    # 1. Fetch available and eligible donors with coordinates (cooldown check)
     from app.modules.donors.models import Donor
+    from sqlalchemy import or_
+    from datetime import datetime, timedelta, timezone
+    cooldown_limit = datetime.now(timezone.utc) - timedelta(days=90)
     donors = db.query(Donor).filter(
         Donor.is_available == True,
+        or_(
+            Donor.last_donated_at == None,
+            Donor.last_donated_at <= cooldown_limit
+        ),
         Donor.latitude.isnot(None),
         Donor.longitude.isnot(None)
     ).all()

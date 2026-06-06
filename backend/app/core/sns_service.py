@@ -87,9 +87,13 @@ class SnsService:
             return False
 
         # 2. Decide if mock or live
+        is_test_email = bool(email and email.endswith("@test.com"))
+        is_test_phone = bool(phone and (phone.startswith("+111") or phone.startswith("+222") or phone.startswith("+333") or phone.startswith("+444")))
         is_mock = (
             settings.AWS_ACCESS_KEY_ID in ("", "mock", "test")
             or settings.AWS_SECRET_ACCESS_KEY in ("", "mock", "test")
+            or is_test_email
+            or is_test_phone
         )
 
         if is_mock:

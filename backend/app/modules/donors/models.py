@@ -37,6 +37,7 @@ class Donor(Base):
     response_rate = Column(Float, default=1.0)       # fraction of requests accepted
     no_show_count = Column(Integer, default=0)        # times donor no-showed
     total_donations = Column(Integer, default=0)
+    points = Column(Integer, default=0, nullable=False)
 
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     updated_at = Column(

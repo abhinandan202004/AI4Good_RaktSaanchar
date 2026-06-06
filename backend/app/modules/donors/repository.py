@@ -27,7 +27,16 @@ class DonorRepository:
         if city:
             q = q.filter(Donor.city.ilike(f"%{city}%"))
         if available_only:
-            q = q.filter(Donor.is_available == True)
+            from datetime import datetime, timedelta, timezone
+            from sqlalchemy import or_
+            cooldown_limit = datetime.now(timezone.utc) - timedelta(days=90)
+            q = q.filter(
+                Donor.is_available == True,
+                or_(
+                    Donor.last_donated_at == None,
+                    Donor.last_donated_at <= cooldown_limit
+                )
+            )
         total = q.count()
         return q.offset(skip).limit(limit).all(), total
 

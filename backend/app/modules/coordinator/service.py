@@ -33,7 +33,20 @@ class CoordinatorService:
             fulfilled=count(RequestStatus.fulfilled),
             escalated=count(RequestStatus.escalated),
             cancelled=count(RequestStatus.cancelled),
-            available_donors=self.db.query(Donor).filter(Donor.is_available == True).count(),
+            available_donors=(
+                self.db.query(Donor)
+                .filter(
+                    Donor.is_available == True,
+                    self.db.or_(
+                        Donor.last_donated_at == None,
+                        Donor.last_donated_at <= (
+                            __import__("datetime").datetime.now(__import__("datetime").timezone.utc)
+                            - __import__("datetime").timedelta(days=90)
+                        )
+                    )
+                )
+                .count()
+            ),
         )
 
     # ── Active Requests ───────────────────────────────────────────────────────
@@ -66,10 +79,13 @@ class CoordinatorService:
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Donor {data.donor_id} not found.",
             )
-        if not donor.is_available:
+        from datetime import datetime, timezone, timedelta
+        cooldown_limit = datetime.now(timezone.utc) - timedelta(days=90)
+        is_cooled_down = donor.last_donated_at is not None and donor.last_donated_at > cooldown_limit
+        if not donor.is_available or is_cooled_down:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail="Selected donor is not currently available.",
+                detail="Selected donor is not currently available or is on 3-month cooldown.",
             )
 
         request.assigned_donor_id = data.donor_id

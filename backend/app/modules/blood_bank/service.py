@@ -164,11 +164,35 @@ class BloodBankService:
         is_safe = (data.status == "approved")
         self.repo.update_unit_quality(unit, is_safe=is_safe, notes=data.feedback_notes)
 
-        # Trigger notification to donor
+        # Trigger notification to donor and apply status updates
         from app.modules.donors.models import Donor
         donor = self.repo.db.query(Donor).filter(Donor.id == unit.donor_id).first()
         if donor:
             self.notif.notify_validation_report(donor.user_id, data.status, data.issue_category)
+            if is_safe:
+                # Award points to the verified donor
+                donor.points = (donor.points or 0) + 10
+                self.repo.db.commit()
+                self.notif.send_to_user(
+                    donor.user_id,
+                    "🎖️ Points Earned!",
+                    f"Congratulations! Your blood donation has been verified. You earned 10 points! Total points: {donor.points}"
+                )
+            else:
+                # Deactivate/Flag the donor due to rejected lab report
+                donor.is_available = False
+                self.repo.db.commit()
+                
+                # Notify all coordinators
+                from app.modules.users.models import User, UserRole
+                coordinators = self.repo.db.query(User).filter(User.role == UserRole.coordinator).all()
+                donor_name = donor.user.full_name if donor.user else f"Donor #{donor.id}"
+                for coord in coordinators:
+                    self.notif.send_to_user(
+                        coord.id,
+                        "🚨 Donor Health Flag Alert",
+                        f"Donor {donor_name} has been flagged/deactivated during blood validation. Reason: {data.issue_category} - {data.feedback_notes or 'No details'}"
+                    )
 
         return ValidationReportOut.model_validate(report)
 

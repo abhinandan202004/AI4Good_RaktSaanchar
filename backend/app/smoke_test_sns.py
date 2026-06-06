@@ -116,13 +116,9 @@ try:
 
     spent_after_creation = SnsService.get_spent_budget()
     print(f"Budget spent after request creation: ${spent_after_creation:.4f}")
-    # We expected:
-    # 1. 1 alert to Donor
-    # 2. 1 alert to Blood Bank
-    # 3. 1 alert to Coordinator
-    # Total = 3 dispatches = 3 * 0.02 = 0.06
-    print(f"Total spent: ${spent_after_creation:.4f} (Expected: $0.06)")
-    assert abs(spent_after_creation - 0.06) < 0.0001
+    # Total = 3 SMS dispatches + 3 emails = 3 * 0.02 + 3 * 0.0001 = 0.0603
+    print(f"Total spent: ${spent_after_creation:.4f} (Expected: $0.0603)")
+    assert abs(spent_after_creation - 0.0603) < 0.0001
 
     print("E2E Patient Request creation dispatches to Donors, Blood Banks, and Coordinators verified!")
     print("\nALL AWS SNS NOTIFICATION FUNCTIONAL TESTS COMPLETED SUCCESSFULLY!")

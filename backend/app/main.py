@@ -85,6 +85,10 @@ def on_startup():
         """))
         db.execute(text("""
             ALTER TABLE donors
+            ADD COLUMN IF NOT EXISTS points INTEGER DEFAULT 0;
+        """))
+        db.execute(text("""
+            ALTER TABLE donors
             ADD COLUMN IF NOT EXISTS no_show_count INTEGER DEFAULT 0;
         """))
         db.execute(text("ALTER TABLE donors ADD COLUMN IF NOT EXISTS latitude FLOAT;"))

@@ -29,6 +29,7 @@ export const PatientDashboard: React.FC = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
+  const [selectedRequest, setSelectedRequest] = useState<BloodRequest | null>(null);
 
   // Active Tab
   const [activeTab, setActiveTab] = useState<'requests' | 'predictor'>('requests');
@@ -72,6 +73,12 @@ export const PatientDashboard: React.FC = () => {
     try {
       const resp = await api.get<BloodRequest[]>('/requests/mine');
       setRequests(resp.data);
+      // Sync selected request updates if currently viewing one
+      setSelectedRequest(prev => {
+        if (!prev) return null;
+        const updated = resp.data.find(r => r.id === prev.id);
+        return updated || null;
+      });
     } catch (err) {
       console.error('Failed to load requests:', err);
     }
@@ -468,7 +475,15 @@ export const PatientDashboard: React.FC = () => {
                     </tr>
                   ) : (
                     requests.map((req) => (
-                      <tr key={req.id} className="hover:bg-slate-100/10 dark:hover:bg-slate-900/10 transition-colors">
+                      <tr 
+                        key={req.id} 
+                        onClick={() => setSelectedRequest(req)}
+                        className={`cursor-pointer transition-colors duration-150 border-b border-slate-100/30 dark:border-slate-900/10 ${
+                          selectedRequest?.id === req.id 
+                            ? 'bg-rose-500/10 dark:bg-rose-500/15 hover:bg-rose-500/15 dark:hover:bg-rose-500/20' 
+                            : 'hover:bg-slate-100/10 dark:hover:bg-slate-900/10'
+                        }`}
+                      >
                         <td className="py-4 font-bold text-slate-400">#{req.id}</td>
                         <td className="py-4">
                           <span className="inline-block bg-slate-800 text-white dark:bg-slate-800 font-extrabold text-xs px-2.5 py-0.5 rounded-lg border border-slate-700">
@@ -523,6 +538,108 @@ export const PatientDashboard: React.FC = () => {
                 </tbody>
               </table>
             </div>
+          </div>
+
+          {/* AI Match Board Section */}
+          <div className="glass-panel border border-slate-200/50 dark:border-slate-800/40 lg:col-span-12 p-6 mt-4">
+            <h3 className="text-base font-extrabold text-slate-800 dark:text-slate-100 border-b border-slate-200/50 dark:border-slate-800/50 pb-3 flex items-center gap-2">
+              <Sparkles className="text-rose-500 w-4.5 h-4.5 animate-pulse" />
+              AI Match Board (Top 10 Anonymized Donors)
+            </h3>
+            
+            {!selectedRequest ? (
+              <div className="text-center py-12 text-slate-400 dark:text-slate-500 font-bold flex flex-col items-center gap-2">
+                <Activity className="w-8 h-8 text-slate-300 dark:text-slate-700 animate-pulse" />
+                <span>Select a request from the table above to view real-time matched AI candidates.</span>
+              </div>
+            ) : (
+              <div className="mt-4 flex flex-col gap-4">
+                <div className="flex flex-wrap justify-between items-center gap-4 bg-slate-150/40 dark:bg-slate-900/20 p-3 rounded-2xl border border-slate-200/45 dark:border-slate-800/30">
+                  <div className="flex items-center gap-2 text-xs font-black">
+                    <span className="text-slate-400">Request:</span>
+                    <span className="text-rose-500 font-extrabold">#{selectedRequest.id}</span>
+                    <span className="text-slate-300">|</span>
+                    <span className="text-slate-400">Required:</span>
+                    <span className="inline-block bg-slate-800 text-white font-extrabold text-[10px] px-2 py-0.5 rounded-lg border border-slate-700">
+                      {selectedRequest.blood_group}
+                    </span>
+                    <span className="text-slate-300">|</span>
+                    <span className="text-slate-400">Urgency:</span>
+                    <span className={`inline-block px-2 py-0.5 rounded-lg text-[9px] font-bold uppercase ${getUrgencyBadge(selectedRequest.urgency)}`}>
+                      {selectedRequest.urgency}
+                    </span>
+                  </div>
+                  <div className="text-[10px] text-slate-400 dark:text-slate-500 font-bold">
+                    Showing top 10 compatibility-ranked active candidates
+                  </div>
+                </div>
+
+                {(!selectedRequest.top_donors || selectedRequest.top_donors.length === 0) ? (
+                  <div className="text-center py-10 text-slate-400 font-bold">
+                    No active compatible donors found within matching distance.
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {selectedRequest.top_donors.slice(0, 10).map((donor, idx) => (
+                      <div key={idx} className="glass-card border border-rose-500/10 hover:border-rose-500/25 bg-white/20 dark:bg-slate-900/10 p-4.5 flex flex-col gap-3 transition-all duration-300">
+                        <div className="flex justify-between items-center">
+                          <div className="flex items-center gap-2">
+                            <span className="flex items-center justify-center w-6 h-6 bg-rose-500 text-white text-[10px] font-black rounded-full shadow-sm">
+                              #{idx + 1}
+                            </span>
+                            <span className="text-xs font-black text-slate-800 dark:text-slate-200">
+                              Matched Candidate
+                            </span>
+                          </div>
+                          <span className="text-[10px] font-black bg-rose-500/10 text-rose-500 dark:bg-rose-500/20 px-2.5 py-0.5 rounded-lg border border-rose-500/10">
+                            {donor.blood_group} Compatible
+                          </span>
+                        </div>
+
+                        <div className="flex flex-col gap-1 mt-1">
+                          <div className="flex justify-between text-[10px] font-bold text-slate-400 dark:text-slate-500">
+                            <span>AI Compatibility Score</span>
+                            <span className="text-rose-500">{(donor.match_probability * 100).toFixed(1)}%</span>
+                          </div>
+                          {/* Progress bar */}
+                          <div className="w-full bg-slate-200/50 dark:bg-slate-800/50 h-1.5 rounded-full overflow-hidden">
+                            <div 
+                              className="bg-gradient-to-r from-rose-500 to-pink-500 h-full rounded-full" 
+                              style={{ width: `${donor.match_probability * 100}%` }}
+                            />
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-3 gap-2 text-center mt-1 border-t border-slate-200/40 dark:border-slate-800/40 pt-2.5">
+                          <div>
+                            <span className="block text-[11px] font-black text-slate-700 dark:text-slate-350">
+                              {donor.distance_km < 1 ? '<1' : donor.distance_km.toFixed(1)} km
+                            </span>
+                            <span className="text-[8px] uppercase font-bold text-slate-400 tracking-wider">Distance</span>
+                          </div>
+                          <div>
+                            <span className="block text-[11px] font-black text-slate-700 dark:text-slate-350">
+                              {(donor.reliability_score * 100).toFixed(0)}%
+                            </span>
+                            <span className="text-[8px] uppercase font-bold text-slate-400 tracking-wider">Reliability</span>
+                          </div>
+                          <div>
+                            <span className="block text-[11px] font-black text-slate-700 dark:text-slate-350">
+                              {donor.total_donations || 0}
+                            </span>
+                            <span className="text-[8px] uppercase font-bold text-slate-400 tracking-wider">Donations</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                
+                <div className="text-[10px] text-slate-400 dark:text-slate-500 font-bold italic mt-2 border-t border-slate-200/40 dark:border-slate-800/40 pt-3 flex items-center gap-1">
+                  🔒 Donor identity and direct contact information are kept strictly confidential until a matched candidate accepts the request.
+                </div>
+              </div>
+            )}
           </div>
 
         </div>

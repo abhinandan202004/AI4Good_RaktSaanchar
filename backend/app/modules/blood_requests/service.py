@@ -86,12 +86,17 @@ class BloodRequestService:
             raise HTTPException(status.HTTP_403_FORBIDDEN, "This request is not assigned to you")
         if req.status != RequestStatus.matched:
             raise HTTPException(status.HTTP_400_BAD_REQUEST, "Request must be in 'matched' state to accept")
-        updated = self.repo.update_status(req, RequestStatus.accepted)
+
+        # Map to nearest blood bank
+        from app.modules.donors.models import Donor as _Donor
+        donor = self.repo.db.query(_Donor).filter(_Donor.id == donor_id).first()
+        if donor:
+            self._map_to_nearest_blood_bank(req, donor)
+
+        updated = self.repo.update_status(req, RequestStatus.accepted, assigned_blood_bank_id=req.assigned_blood_bank_id)
 
         # Notify both parties
         if self.notif and req.patient:
-            from app.modules.donors.models import Donor as _Donor
-            donor = self.repo.db.query(_Donor).filter(_Donor.id == donor_id).first()
             if donor:
                 self.notif.notify_request_accepted(req.patient.user_id, donor.user_id)
 
@@ -177,12 +182,28 @@ class BloodRequestService:
         if req.status != RequestStatus.pending:
             raise HTTPException(status.HTTP_400_BAD_REQUEST, f"Request is in '{req.status.value}' state and cannot be accepted.")
         
-        # Check compatibility
+        # Check compatibility and availability
         from app.modules.donors.models import Donor as _Donor
+        from app.modules.blood_requests.models import BloodRequest as _BloodRequest
         from app.modules.notifications.service import _COMPATIBLE_REVERSE
+        from datetime import datetime, timezone, timedelta
+        
         donor = self.repo.db.query(_Donor).filter(_Donor.id == donor_id).first()
         if not donor:
             raise HTTPException(status.HTTP_404_NOT_FOUND, "Donor not found")
+            
+        if not donor.is_available:
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, "Your donor profile is currently unavailable or deactivated.")
+            
+        if donor.last_donated_at and (datetime.now(timezone.utc) - donor.last_donated_at) < timedelta(days=90):
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, "You are currently on a 90-day recovery cooldown.")
+            
+        active_assignment = self.repo.db.query(_BloodRequest).filter(
+            _BloodRequest.assigned_donor_id == donor.id,
+            _BloodRequest.status == RequestStatus.accepted
+        ).first()
+        if active_assignment:
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, "You are already assigned to an active blood request. Please fulfill it first.")
             
         compatible_groups = _COMPATIBLE_REVERSE.get(req.blood_group.value, [req.blood_group.value])
         if donor.blood_group.value not in compatible_groups:
@@ -199,11 +220,15 @@ class BloodRequestService:
             elif patient and patient.city and donor.city and patient.city.strip().lower() != donor.city.strip().lower():
                 raise HTTPException(status.HTTP_400_BAD_REQUEST, f"Donor is in a different city and coordinates are missing.")
 
+        # Map to nearest blood bank
+        self._map_to_nearest_blood_bank(req, donor)
+
         # Assign and accept
         updated = self.repo.update_status(
             req, RequestStatus.accepted,
             assigned_donor_id=donor_id,
             assigned_by=AssignedBy.coordinator,
+            assigned_blood_bank_id=req.assigned_blood_bank_id,
         )
 
         if self.notif and req.patient:
@@ -268,3 +293,74 @@ class BloodRequestService:
             )
 
         return req
+
+    def confirm_donation(self, req_id: int, bank_user_id: int):
+        req = self._get_or_404(req_id)
+        if req.assigned_blood_bank_id != bank_user_id:
+            raise HTTPException(status.HTTP_403_FORBIDDEN, "This request is not assigned to your blood bank")
+        if req.status != RequestStatus.accepted:
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, "Request must be accepted to confirm donation")
+
+        updated = self.repo.update_status(req, RequestStatus.fulfilled)
+
+        if req.assigned_donor_id:
+            from app.modules.donors.models import Donor as _Donor
+            donor = self.repo.db.query(_Donor).filter(_Donor.id == req.assigned_donor_id).first()
+            if donor:
+                from datetime import datetime, timezone
+                donor.total_donations = (donor.total_donations or 0) + 1
+                donor.last_donated_at = datetime.now(timezone.utc)
+                self.repo.db.commit()
+
+                # Send fulfillment notifications
+                if self.notif and req.patient:
+                    self.notif.notify_request_fulfilled(req.patient.user_id, donor.user_id)
+
+                # Award badges
+                try:
+                    from app.modules.leaderboard.service import LeaderboardService
+                    lb_svc = LeaderboardService(self.repo.db)
+                    lb_svc.seed_badges()
+                    new_badges = lb_svc.check_and_award_badges(donor.id)
+                    if self.notif and new_badges:
+                        for badge in new_badges:
+                            self.notif.notify_badge_awarded(donor.user_id, badge.name, badge.icon_url)
+                except Exception:
+                    pass
+
+        return updated
+
+    def _map_to_nearest_blood_bank(self, req, donor):
+        from app.modules.blood_bank.models import BloodBankProfile
+        from app.modules.notifications.service import _haversine_distance
+
+        closest_bank = None
+        min_dist = float("inf")
+
+        # 1. Map to closest bank using donor coords
+        if donor.latitude is not None and donor.longitude is not None:
+            banks = self.repo.db.query(BloodBankProfile).all()
+            for bank in banks:
+                if bank.latitude is not None and bank.longitude is not None:
+                    dist = _haversine_distance(donor.latitude, donor.longitude, bank.latitude, bank.longitude)
+                    if dist < min_dist:
+                        min_dist = dist
+                        closest_bank = bank
+
+        # 2. Fallback to patient coords if donor coords are not available
+        if closest_bank is None and req.patient and req.patient.latitude is not None and req.patient.longitude is not None:
+            banks = self.repo.db.query(BloodBankProfile).all()
+            for bank in banks:
+                if bank.latitude is not None and bank.longitude is not None:
+                    dist = _haversine_distance(req.patient.latitude, req.patient.longitude, bank.latitude, bank.longitude)
+                    if dist < min_dist:
+                        min_dist = dist
+                        closest_bank = bank
+
+        if closest_bank:
+            req.assigned_blood_bank_id = closest_bank.user_id
+        else:
+            # 3. Final fallback: choose first registered bank
+            first_bank = self.repo.db.query(BloodBankProfile).first()
+            if first_bank:
+                req.assigned_blood_bank_id = first_bank.user_id

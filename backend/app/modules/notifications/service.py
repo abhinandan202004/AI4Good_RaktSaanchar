@@ -76,12 +76,19 @@ class NotificationService:
         title: str,
         body: str,
     ) -> int:
-        """Send notification to all available donors of a given blood group. Returns count."""
+        """Send notification to all available/eligible donors of a given blood group. Returns count."""
+        from datetime import datetime, timedelta, timezone
+        from sqlalchemy import or_
+        cooldown_limit = datetime.now(timezone.utc) - timedelta(days=90)
         donors = (
             self.db.query(Donor)
             .filter(
                 Donor.blood_group == blood_group,
                 Donor.is_available == True,
+                or_(
+                    Donor.last_donated_at == None,
+                    Donor.last_donated_at <= cooldown_limit
+                )
             )
             .all()
         )
@@ -90,8 +97,21 @@ class NotificationService:
         return len(donors)
 
     def broadcast_to_all_donors(self, title: str, body: str) -> int:
-        """Send to all available donors regardless of blood group."""
-        donors = self.db.query(Donor).filter(Donor.is_available == True).all()
+        """Send to all available/eligible donors regardless of blood group."""
+        from datetime import datetime, timedelta, timezone
+        from sqlalchemy import or_
+        cooldown_limit = datetime.now(timezone.utc) - timedelta(days=90)
+        donors = (
+            self.db.query(Donor)
+            .filter(
+                Donor.is_available == True,
+                or_(
+                    Donor.last_donated_at == None,
+                    Donor.last_donated_at <= cooldown_limit
+                )
+            )
+            .all()
+        )
         for donor in donors:
             self.create(donor.user_id, title, body, NotificationType.alert)
         return len(donors)

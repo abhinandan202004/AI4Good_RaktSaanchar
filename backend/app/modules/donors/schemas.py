@@ -38,6 +38,7 @@ class DonorOut(BaseModel):
     is_available: bool
     reliability_score: float
     total_donations: int
+    points: int
     last_donated_at: Optional[datetime]
     user: Optional[UserOut] = None
 

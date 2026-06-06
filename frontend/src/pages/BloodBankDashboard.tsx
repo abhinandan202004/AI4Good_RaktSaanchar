@@ -5,12 +5,13 @@ import api from '../services/api';
 import { BloodInventory, BloodUnit, BloodRequest, BloodBankProfile } from '../types';
 
 export const BloodBankDashboard: React.FC = () => {
-  const { bloodBankProfile, refreshProfiles } = useAuth();
+  const { bloodBankProfile, refreshProfiles, user } = useAuth();
   
   // Database states
   const [inventory, setInventory] = useState<BloodInventory[]>([]);
   const [checkedUnits, setCheckedUnits] = useState<BloodUnit[]>([]);
   const [nearbyRequests, setNearbyRequests] = useState<BloodRequest[]>([]);
+  const [assignedRequests, setAssignedRequests] = useState<BloodRequest[]>([]);
 
   // Action states
   const [error, setError] = useState('');
@@ -50,8 +51,8 @@ export const BloodBankDashboard: React.FC = () => {
 
   const fetchData = async () => {
     try {
-      const invResp = await api.get<BloodInventory[]>('/blood-bank/inventory');
-      setInventory(invResp.data);
+      const invResp = await api.get<any>('/blood-bank/inventory');
+      setInventory(invResp.data.items || []);
 
       const unitResp = await api.get<BloodUnit[]>('/blood-bank/units');
       setCheckedUnits(unitResp.data);
@@ -60,6 +61,13 @@ export const BloodBankDashboard: React.FC = () => {
       const items = reqResp.data.items || [];
       const pendingReqs = items.filter((r: any) => r.status === 'pending');
       setNearbyRequests(pendingReqs);
+
+      if (user) {
+        const assigned = items.filter(
+          (r: any) => r.assigned_blood_bank_id === user.id && r.status === 'accepted'
+        );
+        setAssignedRequests(assigned);
+      }
     } catch (err) {
       console.error('Failed to load blood bank data:', err);
     }
@@ -150,6 +158,22 @@ export const BloodBankDashboard: React.FC = () => {
       fetchData();
     } catch {
       setError('Failed to update quality.');
+    }
+  };
+
+  const confirmDonation = async (reqId: number) => {
+    if (!window.confirm('Are you sure you want to confirm this donation? This will update the request and enforce a 3-month cooldown for the donor.')) return;
+    setError('');
+    setSuccess('');
+    setLoading(true);
+    try {
+      await api.patch(`/requests/${reqId}/confirm-donation`);
+      setSuccess('Donation confirmed successfully! Cooldown applied.');
+      fetchData();
+    } catch (err: any) {
+      setError(err.response?.data?.detail || 'Failed to confirm donation.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -652,6 +676,45 @@ export const BloodBankDashboard: React.FC = () => {
                 )}
               </tbody>
             </table>
+          </div>
+        </div>
+
+        {/* Pending Mapped Donations Section */}
+        <div className="glass-panel border border-slate-200/50 dark:border-slate-800/40 p-6">
+          <h3 className="text-base font-extrabold text-slate-800 dark:text-slate-200 border-b border-slate-200/50 dark:border-slate-800/50 pb-3 flex items-center gap-1.5">
+            <Activity className="text-rose-500 w-5 h-5 animate-pulse" />
+            Pending Mapped Donor Donations
+          </h3>
+          
+          <div className="flex flex-col gap-3.5 mt-4">
+            {assignedRequests.length === 0 ? (
+              <div className="text-center py-4 text-xs text-slate-400 dark:text-slate-500 font-bold">
+                No active donor appointments scheduled for your blood bank.
+              </div>
+            ) : (
+              assignedRequests.map(req => (
+                <div key={req.id} className="flex justify-between items-center p-4 border border-rose-500/15 bg-rose-500/5 rounded-2xl">
+                  <div className="flex flex-col gap-0.5 leading-tight">
+                    <span className="font-extrabold text-rose-500 text-sm">
+                      🩸 {req.blood_group} Mapped Donation
+                    </span>
+                    <span className="text-xs text-slate-600 dark:text-slate-350 font-bold mt-1">
+                      Donor: <strong className="text-slate-800 dark:text-slate-100">{req.assigned_donor?.user?.full_name || `Donor #${req.assigned_donor_id}`}</strong>
+                    </span>
+                    <span className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider mt-1">
+                      Patient: {req.patient?.user?.full_name || 'Patient'} ({req.patient?.hospital_name})
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => confirmDonation(req.id)}
+                    className="bg-emerald-500 hover:bg-emerald-600 text-white font-extrabold rounded-xl py-2 px-4 shadow-md text-[10px] uppercase tracking-wider transition-all"
+                    disabled={loading}
+                  >
+                    Confirm Donation
+                  </button>
+                </div>
+              ))
+            )}
           </div>
         </div>
 

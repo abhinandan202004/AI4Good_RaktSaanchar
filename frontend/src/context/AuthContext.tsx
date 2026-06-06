@@ -49,7 +49,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       } else if (uResp.data.role === 'blood_bank') {
         try {
-          const bResp = await api.get<BloodBankProfile>('/blood-bank/profile');
+          const bResp = await api.get<BloodBankProfile>('/blood-bank/profile/me');
           setBloodBankProfile(bResp.data);
         } catch {
           setBloodBankProfile(null);

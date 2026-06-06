@@ -11,9 +11,21 @@ export const DonorDashboard: React.FC = () => {
   const [activeUrgent, setActiveUrgent] = useState<BloodRequest[]>([]);
   const [reports, setReports] = useState<ValidationReport[]>([]);
   const [toggling, setToggling] = useState(false);
+  const [hasActiveAssignment, setHasActiveAssignment] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
+
+  const latestReport = reports.length > 0 ? reports[0] : null;
+  const isFlagged = latestReport && latestReport.status === 'rejected' && !donorProfile?.is_available;
+
+  const isOnCooldown = (() => {
+    if (!donorProfile?.last_donated_at) return false;
+    const lastDonated = new Date(donorProfile.last_donated_at);
+    const ninetyDaysAgo = new Date();
+    ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+    return lastDonated > ninetyDaysAgo;
+  })();
 
   const [latVal, setLatVal] = useState<number | undefined>(undefined);
   const [lonVal, setLonVal] = useState<number | undefined>(undefined);
@@ -80,6 +92,11 @@ export const DonorDashboard: React.FC = () => {
         r => r.status === 'pending' && ['high', 'critical'].includes(r.urgency.toLowerCase())
       );
       setActiveUrgent(urgentPending);
+      
+      const hasAssignment = reqResp.data.items.some(
+        (r: BloodRequest) => r.status === 'accepted' && r.assigned_donor_id === donorProfile.id
+      );
+      setHasActiveAssignment(hasAssignment);
 
       // Fetch validation reports
       const repResp = await api.get<ValidationReport[]>('/donors/me/validation-reports');
@@ -137,6 +154,18 @@ export const DonorDashboard: React.FC = () => {
   };
 
   const acceptRequest = async (reqId: number) => {
+    if (isFlagged) {
+      setError('Accept block: Your profile is temporarily deactivated due to a health flag.');
+      return;
+    }
+    if (isOnCooldown) {
+      setError('Accept block: You are currently on a standard 3-month recovery cooldown.');
+      return;
+    }
+    if (hasActiveAssignment) {
+      setError('Accept block: You are already assigned to an active request. Please fulfill it first.');
+      return;
+    }
     if (!window.confirm('Do you want to accept this urgent request? (Like Uber - once accepted, you commit to donate).')) return;
     setError('');
     setSuccess('');
@@ -358,6 +387,11 @@ export const DonorDashboard: React.FC = () => {
               <span className="text-slate-500 dark:text-slate-400">Completed Donations</span>
               <span className="font-black text-rose-500 text-base">{donorProfile.total_donations}</span>
             </div>
+            <div className="h-[1px] bg-slate-200/50 dark:bg-slate-800/30"></div>
+            <div className="flex justify-between items-center">
+              <span className="text-slate-500 dark:text-slate-400">Donation Points</span>
+              <span className="font-black text-rose-500 text-base">{donorProfile.points || 0} pts</span>
+            </div>
           </div>
         </div>
 
@@ -452,6 +486,40 @@ export const DonorDashboard: React.FC = () => {
 
       {/* Main Panel Content (Map, Urgent Alerts, Reports) */}
       <div className="flex flex-col gap-6 lg:col-span-8">
+        {isFlagged && latestReport && (
+          <div className="bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-450 p-5 rounded-2xl flex items-start gap-3 shadow-sm">
+            <ShieldIcon className="w-6 h-6 text-rose-500 shrink-0 mt-0.5" />
+            <div className="flex flex-col gap-1 text-xs">
+              <strong className="font-black text-sm text-rose-700 dark:text-rose-400">⚠️ Account Deactivated: Lab Health Flag Alert</strong>
+              <p className="font-bold leading-normal mt-0.5">
+                Your profile availability has been paused because your latest blood unit validation report was flagged by the lab.
+              </p>
+              <div className="mt-3 p-3.5 bg-white/40 dark:bg-slate-900/40 rounded-xl border border-rose-500/15">
+                <div className="font-bold text-slate-700 dark:text-slate-300">Category: <span className="font-black text-rose-500">{latestReport.issue_category}</span></div>
+                <div className="font-semibold mt-1 text-slate-600 dark:text-slate-350">Feedback Notes: {latestReport.feedback_notes || 'No notes provided.'}</div>
+                {latestReport.improvement_recommendations && (
+                  <div className="font-semibold mt-1.5 text-emerald-600 dark:text-emerald-400">Recommendation: {latestReport.improvement_recommendations}</div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {isOnCooldown && (
+          <div className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 p-5 rounded-2xl flex items-start gap-3 shadow-sm">
+            <CheckCircle2 className="w-6 h-6 text-emerald-500 shrink-0 mt-0.5" />
+            <div className="flex flex-col gap-1 text-xs font-semibold">
+              <strong className="font-black text-sm text-emerald-700 dark:text-emerald-350">⏳ Rest & Recovery Cooldown Active</strong>
+              <p className="leading-normal mt-0.5">
+                Thank you for your recent blood donation! To protect your health, you are on a standard 3-month (90 days) recovery cooldown. You will automatically become matchable again once this period expires.
+              </p>
+              <div className="mt-2 text-[10px] uppercase tracking-wider font-bold text-emerald-600/80">
+                Last Donated: {new Date(donorProfile.last_donated_at!).toLocaleDateString()}
+              </div>
+            </div>
+          </div>
+        )}
+
         {error && (
           <div className="bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 text-xs p-3 rounded-xl font-bold">
             {error}
@@ -503,12 +571,20 @@ export const DonorDashboard: React.FC = () => {
                             <div className="h-[1px] bg-slate-100 my-1"></div>
                             <div className="text-slate-500 font-medium">Hospital: <strong className="text-slate-700">{req.patient.hospital_name}</strong></div>
                             <div className="text-slate-500 font-medium">Distance: <strong className="text-slate-700">{req.distance_km?.toFixed(1)} km</strong></div>
-                            <button
-                              onClick={() => acceptRequest(req.id)}
-                              className="bg-rose-500 hover:bg-rose-650 text-white font-extrabold rounded-lg mt-3.5 py-1.5 w-full text-[10px] uppercase tracking-wider transition-all"
-                            >
-                              Accept Direct Donation
-                            </button>
+                            {isFlagged ? (
+                              <div className="text-rose-500 font-bold text-center mt-2.5 text-[10px] uppercase tracking-wider">Deactivated (Health Flag)</div>
+                            ) : isOnCooldown ? (
+                              <div className="text-emerald-500 font-bold text-center mt-2.5 text-[10px] uppercase tracking-wider">Resting (Cooldown)</div>
+                            ) : hasActiveAssignment ? (
+                              <div className="text-amber-500 font-bold text-center mt-2.5 text-[10px] uppercase tracking-wider">Active Assignment</div>
+                            ) : (
+                              <button
+                                onClick={() => acceptRequest(req.id)}
+                                className="bg-rose-500 hover:bg-rose-650 text-white font-extrabold rounded-lg mt-3.5 py-1.5 w-full text-[10px] uppercase tracking-wider transition-all"
+                              >
+                                Accept Direct Donation
+                              </button>
+                            )}
                           </div>
                         </Popup>
                       </Marker>
@@ -529,7 +605,19 @@ export const DonorDashboard: React.FC = () => {
               Broadcast Alert Queue
             </h4>
             <div className="flex flex-col gap-3">
-              {enrichedAlerts.length === 0 ? (
+              {isFlagged ? (
+                <div className="text-center py-6 text-xs text-rose-500 font-bold">
+                  ⚠️ Your matching alerts radar is paused while your profile is deactivated.
+                </div>
+              ) : isOnCooldown ? (
+                <div className="text-center py-6 text-xs text-emerald-500 font-bold">
+                  ⏳ Matching radar is resting during your 3-month recovery cooldown.
+                </div>
+              ) : hasActiveAssignment ? (
+                <div className="text-center py-6 text-xs text-amber-500 font-bold">
+                  🚕 You currently have an active donation assignment. Please fulfill it before accepting new requests.
+                </div>
+              ) : enrichedAlerts.length === 0 ? (
                 <div className="text-center py-6 text-xs text-slate-400 dark:text-slate-500 font-bold">
                   No active urgent alerts within 100 Km radius.
                 </div>
@@ -550,7 +638,7 @@ export const DonorDashboard: React.FC = () => {
                     </div>
                     <button
                       onClick={() => acceptRequest(req.id)}
-                      className="bg-rose-500 hover:bg-rose-600 text-white font-extrabold rounded-xl py-2 px-4 shadow-md text-[10px] uppercase tracking-wider transition-all"
+                      className="bg-rose-500 hover:bg-rose-650 text-white font-extrabold rounded-xl py-2 px-4 shadow-md text-[10px] uppercase tracking-wider transition-all"
                     >
                       Accept (Uber-Style)
                     </button>

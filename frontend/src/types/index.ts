@@ -40,6 +40,7 @@ export interface DonorProfile {
   no_show_count: number;
   total_donations: number;
   last_donated_at?: string;
+  points?: number;
 }
 
 export interface BloodBankProfile {
@@ -115,6 +116,7 @@ export interface BloodRequest {
     id: number;
     user: { full_name: string };
   };
+  top_donors?: any[];
 }
 
 export interface Notification {

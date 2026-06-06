@@ -38,6 +38,7 @@ class Settings(BaseSettings):
     AWS_SNS_ENABLED: bool = False
     AWS_SNS_BUDGET_LIMIT: float = 40.0
     AWS_SNS_ESTIMATED_COST_PER_SMS: float = 0.02
+    AWS_SES_SENDER: str = "no-reply@raktsaanchar.org"
 
     class Config:
         env_file = ".env"
