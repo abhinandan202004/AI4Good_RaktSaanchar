@@ -1,0 +1,16 @@
+{
+    "age": 15,
+    "gender": "Male",
+    "weight_kg": 40,
+    "thalassemia_type": "Major",
+    "current_hb_level": 7.2,
+    "target_hb_level": 10.0,
+    "ferritin_level": 1800,
+    "days_since_last_transfusion": 25,
+    "previous_units_received": 2,
+    "average_units_per_transfusion": 2.5,
+    "transfusions_last_12_months": 18,
+    "spleen_status": "Enlarged",
+    "symptom_severity": "Moderate",
+    "blood_group": "B+"
+}

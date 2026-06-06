@@ -1,0 +1,11 @@
+{
+    "model_type": "XGBoost Multiclass",
+    "target": "predicted_units_required",
+    "classes": [
+        1,
+        2,
+        3,
+        4
+    ],
+    "best_cv_score": 0.9392962637665361
+}
