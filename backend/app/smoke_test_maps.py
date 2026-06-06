@@ -170,7 +170,7 @@ def main():
             "patient_city": "Mumbai",
             "patient_latitude": 19.0760,
             "patient_longitude": 72.8777,
-            "limit": 50
+            "limit": 1000
         }, headers=coord_headers)
 
         if ml_resp.status_code != 200:
@@ -216,7 +216,7 @@ def main():
 
         ml_db_resp = client.post("/ml/rank-donors", json={
             "request_id": req_id,
-            "limit": 50
+            "limit": 1000
         }, headers=coord_headers)
 
         if ml_db_resp.status_code != 200:
