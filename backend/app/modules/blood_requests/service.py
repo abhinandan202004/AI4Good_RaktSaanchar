@@ -19,11 +19,25 @@ class BloodRequestService:
         self.patient_repo = patient_repo
         self.notif = notif  # optional so existing callers that don't pass it still work
 
+    def _populate_top_donors(self, req):
+        if not req:
+            return req
+        try:
+            from app.modules.ml import service as ml_service
+            req.top_donors = ml_service.rank_donors(
+                db=self.repo.db,
+                request_id=req.id,
+                limit=20
+            )
+        except Exception:
+            req.top_donors = []
+        return req
+
     def _get_or_404(self, req_id: int):
         req = self.repo.get_by_id(req_id)
         if not req:
             raise HTTPException(status.HTTP_404_NOT_FOUND, "Blood request not found")
-        return req
+        return self._populate_top_donors(req)
 
     # ── Patient actions ───────────────────────────────────────────────────────
 
@@ -39,13 +53,16 @@ class BloodRequestService:
         )
         if self.notif:
             self.notif.notify_request_created(req)
-        return req
+        return self._populate_top_donors(req)
 
     def get_my_requests(self, user_id: int):
         patient = self.patient_repo.get_by_user_id(user_id)
         if not patient:
             return []
-        return self.repo.list_by_patient(patient.id)
+        requests = self.repo.list_by_patient(patient.id)
+        for req in requests:
+            self._populate_top_donors(req)
+        return requests
 
     def cancel(self, req_id: int, user_id: int):
         req = self._get_or_404(req_id)

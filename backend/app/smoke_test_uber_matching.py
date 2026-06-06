@@ -55,12 +55,15 @@ def main():
         user_ids = {}
 
         for user in users_to_register:
-            reg_resp = client.post("/auth/register", json={
+            payload = {
                 "email": user["email"],
                 "password": password,
                 "full_name": user["full_name"],
                 "role": user["role"]
-            })
+            }
+            if user["role"] == "patient":
+                payload["blood_group"] = "O+"
+            reg_resp = client.post("/auth/register", json=payload)
             assert reg_resp.status_code == 201, f"Reg failed: {reg_resp.text}"
             reg_data = reg_resp.json()
             user_ids[user["email"]] = reg_data["id"]

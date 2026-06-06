@@ -9,8 +9,9 @@ class DonorService:
         self.repo = repo
 
     def create_profile(self, user_id: int, data: DonorProfileCreate):
-        if self.repo.get_by_user_id(user_id):
-            raise HTTPException(status.HTTP_409_CONFLICT, "Donor profile already exists")
+        existing = self.repo.get_by_user_id(user_id)
+        if existing:
+            return self.repo.update(existing, **data.model_dump(exclude_none=True))
         return self.repo.create(user_id=user_id, **data.model_dump())
 
     def get_profile(self, donor_id: int):

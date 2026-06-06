@@ -31,6 +31,11 @@ class AuthService:
         if data.phone and self.db.query(User).filter(User.phone == data.phone).first():
             raise HTTPException(status.HTTP_409_CONFLICT, "Phone already registered")
 
+        from app.modules.users.models import UserRole
+        if data.role == UserRole.patient:
+            if not data.blood_group:
+                raise HTTPException(status.HTTP_400_BAD_REQUEST, "Blood group is required for registering as a patient")
+
         user = User(
             email=data.email,
             phone=data.phone,
@@ -41,6 +46,27 @@ class AuthService:
         self.db.add(user)
         self.db.commit()
         self.db.refresh(user)
+
+        # Automatically seed a Patient or Donor profile if registering with a blood group
+        if user.role == UserRole.patient:
+            from app.modules.patients.models import Patient
+            patient = Patient(
+                user_id=user.id,
+                blood_group_required=data.blood_group,
+            )
+            self.db.add(patient)
+            self.db.commit()
+            self.db.refresh(user)
+        elif user.role == UserRole.donor and data.blood_group:
+            from app.modules.donors.models import Donor, BloodGroup as DonorBloodGroup
+            donor = Donor(
+                user_id=user.id,
+                blood_group=DonorBloodGroup(data.blood_group.value),
+            )
+            self.db.add(donor)
+            self.db.commit()
+            self.db.refresh(user)
+
         return user
 
     # ── Login ─────────────────────────────────────────────────────────────────

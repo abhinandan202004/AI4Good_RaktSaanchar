@@ -8,8 +8,9 @@ class PatientService:
         self.repo = repo
 
     def create_profile(self, user_id: int, data: PatientProfileCreate):
-        if self.repo.get_by_user_id(user_id):
-            raise HTTPException(status.HTTP_409_CONFLICT, "Patient profile already exists")
+        existing = self.repo.get_by_user_id(user_id)
+        if existing:
+            return self.repo.update(existing, **data.model_dump(exclude_none=True))
         return self.repo.create(user_id=user_id, **data.model_dump())
 
     def get_my_profile(self, user_id: int):

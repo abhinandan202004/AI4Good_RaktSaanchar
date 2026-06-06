@@ -2,6 +2,7 @@ from pydantic import BaseModel, EmailStr
 from typing import Optional
 from datetime import datetime
 from app.modules.users.models import UserRole
+from app.modules.patients.models import BloodGroup
 
 
 # ── Register ──────────────────────────────────────────────────────────────────
@@ -12,6 +13,7 @@ class RegisterRequest(BaseModel):
     password: str
     full_name: str
     role: UserRole = UserRole.donor
+    blood_group: Optional[BloodGroup] = None
 
 
 # ── Login ─────────────────────────────────────────────────────────────────────

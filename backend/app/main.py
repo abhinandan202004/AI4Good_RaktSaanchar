@@ -13,6 +13,7 @@ from app.modules.notifications.models import Notification          # noqa
 from app.modules.chat.models import ChatRoom, ChatMessage          # noqa
 from app.modules.leaderboard.models import Badge, DonorBadge      # noqa
 from app.modules.blood_bank.models import BloodInventory, BloodUnit, BloodValidationReport, BloodBankProfile  # noqa
+from app.modules.transfusion.models import TransfusionPrediction  # noqa
 
 # ── Create all tables ─────────────────────────────────────────────────────────
 Base.metadata.create_all(bind=engine)
@@ -48,6 +49,7 @@ from app.modules.blood_bank.routes import router as blood_bank_router
 from app.modules.coordinator.routes import router as coordinator_router
 from app.modules.ml.routes import router as ml_router
 from app.modules.leaderboard.routes import router as leaderboard_router
+from app.modules.transfusion.routes import router as transfusion_router
 
 app.include_router(auth_router,          prefix=API_PREFIX)
 app.include_router(users_router,         prefix=API_PREFIX)
@@ -60,6 +62,7 @@ app.include_router(blood_bank_router,    prefix=API_PREFIX)
 app.include_router(coordinator_router,   prefix=API_PREFIX)
 app.include_router(ml_router,            prefix=API_PREFIX)
 app.include_router(leaderboard_router,   prefix=API_PREFIX)
+app.include_router(transfusion_router,   prefix=API_PREFIX)
 
 
 # ── Startup ───────────────────────────────────────────────────────────────────

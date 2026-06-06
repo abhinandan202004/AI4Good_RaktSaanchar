@@ -30,6 +30,15 @@ class Settings(BaseSettings):
     UPLOAD_DIR: str = "/app/uploads"
     MAX_UPLOAD_SIZE_MB: int = 10
 
+    # AWS SNS Settings
+    AWS_ACCESS_KEY_ID: str = "mock"
+    AWS_SECRET_ACCESS_KEY: str = "mock"
+    AWS_REGION: str = "us-east-1"
+    AWS_SNS_TOPIC_ARN: str = ""
+    AWS_SNS_ENABLED: bool = False
+    AWS_SNS_BUDGET_LIMIT: float = 40.0
+    AWS_SNS_ESTIMATED_COST_PER_SMS: float = 0.02
+
     class Config:
         env_file = ".env"
         extra = "ignore"

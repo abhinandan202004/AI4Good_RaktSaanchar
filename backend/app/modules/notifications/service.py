@@ -11,6 +11,8 @@ from sqlalchemy.orm import Session
 
 from app.modules.notifications.models import Notification, NotificationType
 from app.modules.donors.models import Donor, BloodGroup
+from app.modules.users.models import User, UserRole
+from app.core.sns_service import SnsService
 
 _COMPATIBLE_REVERSE = {
     "O-":  ["O-"],
@@ -145,35 +147,71 @@ class NotificationService:
         # Routing decision based on Urgency
         is_urgent = urgency.lower() in ("high", "critical")
 
-        if is_urgent:
-            # URGENT: Broadcast to compatible available donors & blood banks within 100 Km radius
-            title = f"🚨 URGENT: {blood_group.value} Needed!"
-            body = f"URGENT: {units} unit(s) of {blood_group.value} requested at {hospital} ({urgency.upper()} Urgency). Accept now!"
-
-            # 1. Alert compatible donors within 100 Km
-            donors = (
-                self.db.query(Donor)
-                .filter(
-                    Donor.blood_group.in_(compatible_groups),
-                    Donor.is_available == True,
-                )
-                .all()
+        # Notify Coordinators (invoked for all requests)
+        coord_title = f"📢 New Request Created: #{request.id} ({blood_group.value})"
+        coord_body = f"A new request for {units} unit(s) of {blood_group.value} has been created at {hospital} ({urgency.upper()} Urgency)."
+        
+        coordinators = (
+            self.db.query(User)
+            .filter(User.role.in_([UserRole.coordinator, UserRole.admin]))
+            .all()
+        )
+        for c in coordinators:
+            self.create(c.id, coord_title, coord_body, NotificationType.alert)
+            SnsService.send_sns_notification(
+                phone=c.phone,
+                email=c.email,
+                subject=coord_title,
+                message=coord_body
             )
-            for d in donors:
-                # Calculate distance
-                in_range = False
+
+        # 2. ALWAYS rank compatible donors using the ML model and notify them
+        from app.modules.ml import service as ml_service
+        ranked_donors = ml_service.rank_donors(
+            db=self.db,
+            patient_blood_group=blood_group.value,
+            urgency=urgency,
+            units_required=units,
+            patient_city=patient_city,
+            patient_latitude=patient_lat,
+            patient_longitude=patient_lon,
+            limit=20,
+        )
+        
+        if is_urgent:
+            donor_title = f"🚨 URGENT Blood Request: {blood_group.value}"
+            donor_body = f"An urgent request for {units} unit(s) of {blood_group.value} has been created at {hospital}."
+        else:
+            donor_title = f"📅 Donation Match Opportunity: {blood_group.value}"
+            donor_body = f"{units} unit(s) of {blood_group.value} requested at {hospital}. You are matched as a top candidate. Open app to schedule!"
+        
+        for rd in ranked_donors:
+            if rd["blood_group"] not in compatible_groups:
+                continue
+            in_range = True
+            donor_user = self.db.query(User).filter(User.id == rd["user_id"]).first()
+            if is_urgent and donor_user and donor_user.donor_profile:
+                d = donor_user.donor_profile
                 if patient_lat is not None and patient_lon is not None and d.latitude is not None and d.longitude is not None:
                     dist = _haversine_distance(patient_lat, patient_lon, d.latitude, d.longitude)
-                    if dist <= 100.0:
-                        in_range = True
-                elif patient_city and d.city and patient_city.strip().lower() == d.city.strip().lower():
-                    # Fallback to city
-                    in_range = True
-                
-                if in_range:
-                    self.create(d.user_id, title, body, NotificationType.alert)
+                    if dist > 100.0:
+                        in_range = False
+                elif patient_city and d.city and patient_city.strip().lower() != d.city.strip().lower():
+                    in_range = False
 
-            # 2. Alert blood banks within 100 Km
+            if in_range:
+                self.create(rd["user_id"], donor_title, donor_body, NotificationType.request)
+                if donor_user:
+                    SnsService.send_sns_notification(
+                        phone=donor_user.phone,
+                        email=donor_user.email,
+                        subject=donor_title,
+                        message=donor_body
+                    )
+
+        # 3. Handle Blood Bank notifications
+        if is_urgent:
+            # Urgent: Alert blood banks within 100 Km
             from app.modules.blood_bank.models import BloodBankProfile
             banks = self.db.query(BloodBankProfile).all()
             for b in banks:
@@ -183,14 +221,22 @@ class NotificationService:
                     if dist <= 100.0:
                         in_range = True
                 elif patient_city and b.address and patient_city.strip().lower() in b.address.strip().lower():
-                    # Fallback
                     in_range = True
 
                 if in_range:
-                    self.create(b.user_id, f"🚨 URGENT Blood Bank Alert: {blood_group.value} Requested", body, NotificationType.alert)
-
+                    bank_title = f"🚨 URGENT Blood Bank Alert: {blood_group.value} Requested"
+                    self.create(b.user_id, bank_title, donor_body, NotificationType.alert)
+                    # Dispatch via Amazon SNS
+                    bank_user = self.db.query(User).filter(User.id == b.user_id).first()
+                    if bank_user:
+                        SnsService.send_sns_notification(
+                            phone=bank_user.phone,
+                            email=bank_user.email,
+                            subject=bank_title,
+                            message=donor_body
+                        )
         else:
-            # NON-URGENT: Check blood bank inventories within 100 Km first
+            # Non-urgent: Check blood bank inventories within 100 Km first
             from app.modules.blood_bank.models import BloodBankProfile, BloodInventory
             
             # Find blood banks within 100 Km
@@ -204,20 +250,18 @@ class NotificationService:
                     nearby_bank_ids.append(b.user_id)
 
             # Check inventory for compatible blood groups in these nearby banks
-            inventory_found = False
             if nearby_bank_ids:
                 matching_inventory = (
                     self.db.query(BloodInventory)
                     .filter(
                         BloodInventory.blood_bank_id.in_(nearby_bank_ids),
                         BloodInventory.blood_group.in_(compatible_groups),
-                        BloodInventory.quantity_ml >= 450.0,  # at least 1 unit (450ml)
+                        BloodInventory.quantity_ml >= 450.0,
                     )
                     .first()
                 )
                 if matching_inventory:
-                    inventory_found = True
-                    # Notify the patient that blood is available at a nearby blood bank
+                    # Notify the patient that compatible blood is available at a nearby blood bank
                     self.send_to_user(
                         patient_user_id,
                         "🏥 Blood Available at Blood Bank",
@@ -225,32 +269,23 @@ class NotificationService:
                         NotificationType.request,
                     )
                     # Notify the blood bank
+                    bank_title = "📢 Matching Request in Your Area"
+                    bank_body = f"A request for {units} unit(s) of {blood_group.value} has been created at {hospital}. You have compatible stock available."
                     self.send_to_user(
                         matching_inventory.blood_bank_id,
-                        "📢 Matching Request in Your Area",
-                        f"A request for {units} unit(s) of {blood_group.value} has been created at {hospital}. You have compatible stock available.",
+                        bank_title,
+                        bank_body,
                         NotificationType.alert,
                     )
-
-            if not inventory_found:
-                # Fallback: Find top 20 compatible donors using ML ranker
-                from app.modules.ml import service as ml_service
-                ranked_donors = ml_service.rank_donors(
-                    db=self.db,
-                    patient_blood_group=blood_group.value,
-                    urgency=urgency,
-                    units_required=units,
-                    patient_city=patient_city,
-                    patient_latitude=patient_lat,
-                    patient_longitude=patient_lon,
-                    limit=20,
-                )
-                
-                title = f"📅 Donation Match Opportunity: {blood_group.value}"
-                body = f"{units} unit(s) of {blood_group.value} requested at {hospital}. You are matched as a top candidate. Open app to schedule!"
-                
-                for rd in ranked_donors:
-                    self.create(rd["user_id"], title, body, NotificationType.request)
+                    # Dispatch via Amazon SNS
+                    bank_user = self.db.query(User).filter(User.id == matching_inventory.blood_bank_id).first()
+                    if bank_user:
+                        SnsService.send_sns_notification(
+                            phone=bank_user.phone,
+                            email=bank_user.email,
+                            subject=bank_title,
+                            message=bank_body
+                        )
 
     def notify_request_matched(self, donor_user_id: int, patient_user_id: int):
         self.send_to_user(

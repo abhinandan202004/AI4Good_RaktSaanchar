@@ -20,7 +20,8 @@ RUN pip install --no-cache-dir \
     pydantic-settings \
     httpx \
     python-multipart \
-    joblib
+    joblib \
+    boto3
 
 # ── Step 2: ML deps (installed separately to avoid OOM during build) ──────────
 RUN pip install --no-cache-dir numpy pandas scikit-learn

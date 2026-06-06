@@ -18,3 +18,4 @@ scikit-learn
 numpy
 pandas
 joblib
+boto3

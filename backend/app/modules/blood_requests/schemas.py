@@ -31,6 +31,7 @@ class BloodRequestOut(BaseModel):
     updated_at: datetime
     patient: Optional[PatientOut] = None
     assigned_donor: Optional[DonorOut] = None
+    top_donors: Optional[list[dict]] = None
 
     class Config:
         from_attributes = True
