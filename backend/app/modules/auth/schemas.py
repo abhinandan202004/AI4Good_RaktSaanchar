@@ -54,3 +54,17 @@ class UserOut(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+# ── Verify Request ────────────────────────────────────────────────────────────
+
+class VerifyRequest(BaseModel):
+    email: EmailStr
+    code: str
+
+
+# ── Resend OTP Request ────────────────────────────────────────────────────────
+
+class ResendOtpRequest(BaseModel):
+    email: EmailStr
+

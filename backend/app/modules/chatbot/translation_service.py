@@ -23,7 +23,18 @@ def get_sarvam_client():
 class TranslationService:
 
     @staticmethod
+    def is_english(text: str) -> bool:
+        import re
+        cleaned = re.sub(r'[\s\.,\?!\'"@#\$%\^&\*\(\)\[\]\{\}:;]+', '', text)
+        if not cleaned:
+            return True
+        return all(ord(c) < 128 for c in cleaned)
+
+    @staticmethod
     def translate_to_english(text: str):
+        if TranslationService.is_english(text):
+            return {"translated_text": text, "source_language": "en-IN"}
+
         client = get_sarvam_client()
         if not client:
             return {"translated_text": text, "source_language": "en-IN"}

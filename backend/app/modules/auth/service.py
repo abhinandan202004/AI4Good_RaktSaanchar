@@ -10,6 +10,8 @@ from app.core.security import (
     decode_token,
 )
 from app.core.config import settings
+import random
+from app.core.sns_service import SnsService
 from app.modules.users.models import User
 from app.modules.auth.schemas import RegisterRequest, LoginRequest, TokenResponse
 
@@ -28,7 +30,10 @@ class AuthService:
         # Check uniqueness
         if self.db.query(User).filter(User.email == data.email).first():
             raise HTTPException(status.HTTP_409_CONFLICT, "Email already registered")
-        if data.phone and self.db.query(User).filter(User.phone == data.phone).first():
+        
+        # Normalize phone: empty string or whitespace is None
+        phone_val = data.phone.strip() if (data.phone and data.phone.strip()) else None
+        if phone_val and self.db.query(User).filter(User.phone == phone_val).first():
             raise HTTPException(status.HTTP_409_CONFLICT, "Phone already registered")
 
         from app.modules.users.models import UserRole
@@ -38,10 +43,11 @@ class AuthService:
 
         user = User(
             email=data.email,
-            phone=data.phone,
+            phone=phone_val,
             full_name=data.full_name,
             role=data.role,
             hashed_password=hash_password(data.password),
+            is_verified=False,
         )
         self.db.add(user)
         self.db.commit()
@@ -67,7 +73,77 @@ class AuthService:
             self.db.commit()
             self.db.refresh(user)
 
+        # Generate and store verification OTP in Redis
+        is_test_account = user.email.endswith("@test.com")
+        verify_code = "123456" if is_test_account else f"{random.randint(100000, 999999)}"
+        self.redis.setex(f"verify:{user.email}", 600, verify_code)
+
+        subject = "RaktaSanchaar Verification Code"
+        email_body = f"Hello {user.full_name},\n\nYour RaktaSanchaar verification code is: {verify_code}\n\nThis code will expire in 10 minutes."
+
+        # Proactively trigger AWS SES / SNS Sandbox verification for testing
+        is_mock = (
+            settings.AWS_ACCESS_KEY_ID in ("", "mock", "test")
+            or settings.AWS_SECRET_ACCESS_KEY in ("", "mock", "test")
+            or is_test_account
+            or (phone_val and (phone_val.startswith("+111") or phone_val.startswith("+222") or phone_val.startswith("+333") or phone_val.startswith("+444")))
+        )
+        if settings.AWS_SNS_ENABLED and not is_mock:
+            # Register Email in SES Sandbox
+            try:
+                import boto3
+                ses_client = boto3.client(
+                    "ses",
+                    aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+                    aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+                    region_name=settings.AWS_REGION
+                )
+                ses_client.verify_email_identity(EmailAddress=user.email)
+            except Exception as ses_v_err:
+                import logging
+                logging.getLogger(__name__).warning(f"Failed to auto-register SES email {user.email}: {ses_v_err}")
+
+            # Register Phone in SNS Sandbox
+            if phone_val:
+                try:
+                    import boto3
+                    sns_client = boto3.client(
+                        "sns",
+                        aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+                        aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+                        region_name=settings.AWS_REGION
+                    )
+                    sns_client.create_sms_sandbox_phone_number(PhoneNumber=phone_val)
+                except Exception as sns_v_err:
+                    import logging
+                    logging.getLogger(__name__).warning(f"Failed to auto-register SNS phone {phone_val}: {sns_v_err}")
+
+        # Send OTP code via email only (no SMS)
+        SnsService.send_sns_notification(
+            email=user.email,
+            subject=subject,
+            message=email_body,
+            email_body=email_body
+        )
+
         return user
+
+    # ── Verify ────────────────────────────────────────────────────────────────
+
+    def verify(self, email: str, code: str) -> dict:
+        stored = self.redis.get(f"verify:{email}")
+        if not stored or stored != code:
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, "Invalid or expired verification code")
+
+        user = self.db.query(User).filter(User.email == email).first()
+        if not user:
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "User not found")
+
+        user.is_verified = True
+        self.db.commit()
+
+        self.redis.delete(f"verify:{email}")
+        return {"message": "Verification successful"}
 
     # ── Login ─────────────────────────────────────────────────────────────────
 
@@ -77,6 +153,8 @@ class AuthService:
             raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Invalid credentials")
         if not user.is_active:
             raise HTTPException(status.HTTP_403_FORBIDDEN, "Account is deactivated")
+        if not user.is_verified:
+            raise HTTPException(status.HTTP_403_FORBIDDEN, "Account is not verified. Please verify your email/phone first.")
 
         access_token = create_access_token(user.id, user.role.value)
         refresh_token = create_refresh_token(user.id)
@@ -112,3 +190,29 @@ class AuthService:
 
     def logout(self, user_id: int) -> None:
         self.redis.delete(f"{_REFRESH_KEY_PREFIX}{user_id}")
+
+    # ── Resend OTP ────────────────────────────────────────────────────────────
+
+    def resend_otp(self, email: str) -> dict:
+        user = self.db.query(User).filter(User.email == email).first()
+        if not user:
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "User not found")
+        if user.is_verified:
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, "Email already verified")
+
+        is_test_account = email.endswith("@test.com")
+        verify_code = "123456" if is_test_account else f"{random.randint(100000, 999999)}"
+        self.redis.setex(f"verify:{email}", 600, verify_code)
+
+        subject = "RaktaSanchaar Verification Code"
+        email_body = f"Hello {user.full_name},\n\nYour RaktaSanchaar verification code is: {verify_code}\n\nThis code will expire in 10 minutes."
+
+        # Send OTP code via email only
+        SnsService.send_sns_notification(
+            email=user.email,
+            subject=subject,
+            message=email_body,
+            email_body=email_body
+        )
+
+        return {"message": "Verification code resent successfully"}

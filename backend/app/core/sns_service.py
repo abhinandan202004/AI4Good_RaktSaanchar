@@ -132,38 +132,52 @@ class SnsService:
                     cls._add_to_spent_budget(0.0001)
                     sent_any = True
                 except Exception as ses_err:
-                    logger.warning(f"Failed to send SES email directly: {ses_err}. Trying SNS topic publish...")
+                    logger.warning(
+                        f"Failed to send SES email directly to {email} (SES may be in Sandbox mode with recipient unverified).\n"
+                        f"Error: {ses_err}\n"
+                        f"Logged Email Content for testing: Subject: '{subject}', Body: '{email_content}'"
+                    )
                     if settings.AWS_SNS_TOPIC_ARN:
-                        sns_client = boto3.client(
-                            "sns",
-                            aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
-                            aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
-                            region_name=settings.AWS_REGION
-                        )
-                        response = sns_client.publish(
-                            TopicArn=settings.AWS_SNS_TOPIC_ARN,
-                            Subject=subject,
-                            Message=f"To: {email}\n\n{email_content}"
-                        )
-                        logger.info(f"SNS Topic fallback sent for email. MessageId: {response.get('MessageId')}")
-                        cls._add_to_spent_budget(0.0001)
-                        sent_any = True
+                        try:
+                            sns_client = boto3.client(
+                                "sns",
+                                aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+                                aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+                                region_name=settings.AWS_REGION
+                            )
+                            response = sns_client.publish(
+                                TopicArn=settings.AWS_SNS_TOPIC_ARN,
+                                Subject=subject,
+                                Message=f"To: {email}\n\n{email_content}"
+                            )
+                            logger.info(f"SNS Topic fallback sent for email. MessageId: {response.get('MessageId')}")
+                            cls._add_to_spent_budget(0.0001)
+                            sent_any = True
+                        except Exception as topic_err:
+                            logger.warning(f"SNS Topic fallback failed: {topic_err}")
 
             # Send SMS via SNS if phone is provided
             if phone:
-                sns_client = boto3.client(
-                    "sns",
-                    aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
-                    aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
-                    region_name=settings.AWS_REGION
-                )
-                response = sns_client.publish(
-                    PhoneNumber=phone,
-                    Message=sms_content
-                )
-                logger.info(f"SNS SMS sent to {phone}. MessageId: {response.get('MessageId')}")
-                cls._add_to_spent_budget(cost_per_sms)
-                sent_any = True
+                try:
+                    sns_client = boto3.client(
+                        "sns",
+                        aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+                        aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+                        region_name=settings.AWS_REGION
+                    )
+                    response = sns_client.publish(
+                        PhoneNumber=phone,
+                        Message=sms_content
+                    )
+                    logger.info(f"SNS SMS sent to {phone}. MessageId: {response.get('MessageId')}")
+                    cls._add_to_spent_budget(cost_per_sms)
+                    sent_any = True
+                except Exception as sns_err:
+                    logger.warning(
+                        f"Failed to send SNS SMS directly to {phone} (SNS may be in Sandbox mode with recipient unverified).\n"
+                        f"Error: {sns_err}\n"
+                        f"Logged SMS Content for testing: '{sms_content}'"
+                    )
 
             if not sent_any:
                 logger.info("AWS Dispatch skipped: No phone or email target provided.")

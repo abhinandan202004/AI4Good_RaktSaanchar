@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { Lock, Mail, User as UserIcon, MapPin, Sparkles, LogIn, CheckCircle2 } from 'lucide-react';
+import { Lock, Mail, User as UserIcon, MapPin, Sparkles, LogIn, CheckCircle2, Phone } from 'lucide-react';
 import api from '../services/api';
 
 export const LoginRegister: React.FC = () => {
@@ -25,6 +25,11 @@ export const LoginRegister: React.FC = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // Verification state
+  const [showVerification, setShowVerification] = useState(false);
+  const [verificationCode, setVerificationCode] = useState('');
+  const [phone, setPhone] = useState('');
 
   // Request browser location
   const detectLocation = () => {
@@ -56,56 +61,18 @@ export const LoginRegister: React.FC = () => {
 
     try {
       if (isRegister) {
-        // 1. Register User
-        const regResp = await api.post('/auth/register', {
+        // 1. Register User (unverified)
+        await api.post('/auth/register', {
           email,
+          phone: phone || undefined,
           password,
           full_name: fullName,
           role,
           blood_group: (role === 'patient' || role === 'donor') ? bloodGroup : undefined,
         });
 
-        // 2. Login User
-        const loginResp = await api.post('/auth/login', { email, password });
-        const { access_token, user: loggedUser } = loginResp.data;
-        
-        // Save token immediately in local storage before creating profiles
-        localStorage.setItem('token', access_token);
-
-        // 3. Create role-specific profiles
-        if (role === 'patient') {
-          await api.post('/patients/me', {
-            blood_group_required: bloodGroup,
-            units_required: 1,
-            urgency: 'medium',
-            city: 'Mumbai',
-            state: 'Maharashtra',
-            latitude: latitude || 19.0760,
-            longitude: longitude || 72.8777,
-          });
-        } else if (role === 'donor') {
-          await api.post('/donors/me', {
-            blood_group: bloodGroup,
-            age: 30,
-            weight: 75,
-            city: 'Mumbai',
-            state: 'Maharashtra',
-            latitude: latitude || 19.0760,
-            longitude: longitude || 72.8777,
-          });
-        } else if (role === 'blood_bank') {
-          await api.post('/blood-bank/profile', {
-            hospital_name: `${fullName} Blood Bank`,
-            contact_phone: '1234567890',
-            address: 'Mumbai Central, Mumbai',
-            latitude: latitude || 19.0760,
-            longitude: longitude || 72.8777,
-          });
-        }
-
-        await login(access_token, loggedUser);
-        setSuccess('Account created and logged in!');
-        setTimeout(() => navigate(getDashboardRoute(loggedUser.role)), 1000);
+        setSuccess('Registration initiated! Verification code sent.');
+        setShowVerification(true);
       } else {
         // Login Flow
         const loginResp = await api.post('/auth/login', { email, password });
@@ -116,6 +83,79 @@ export const LoginRegister: React.FC = () => {
       }
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Authentication failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerify = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setSuccess('');
+    setLoading(true);
+
+    try {
+      // 1. Verify OTP Code
+      await api.post('/auth/verify', { email, code: verificationCode });
+      setSuccess('Verification successful! Logging in...');
+
+      // 2. Login User
+      const loginResp = await api.post('/auth/login', { email, password });
+      const { access_token, user: loggedUser } = loginResp.data;
+      
+      // Save token immediately in local storage before creating profiles
+      localStorage.setItem('token', access_token);
+
+      // 3. Create role-specific profiles
+      if (role === 'patient') {
+        await api.post('/patients/me', {
+          blood_group_required: bloodGroup,
+          units_required: 1,
+          urgency: 'medium',
+          city: 'Mumbai',
+          state: 'Maharashtra',
+          latitude: latitude || 19.0760,
+          longitude: longitude || 72.8777,
+        });
+      } else if (role === 'donor') {
+        await api.post('/donors/me', {
+          blood_group: bloodGroup,
+          age: 30,
+          weight: 75,
+          city: 'Mumbai',
+          state: 'Maharashtra',
+          latitude: latitude || 19.0760,
+          longitude: longitude || 72.8777,
+        });
+      } else if (role === 'blood_bank') {
+        await api.post('/blood-bank/profile', {
+          hospital_name: `${fullName} Blood Bank`,
+          contact_phone: '1234567890',
+          address: 'Mumbai Central, Mumbai',
+          latitude: latitude || 19.0760,
+          longitude: longitude || 72.8777,
+        });
+      }
+
+      await login(access_token, loggedUser);
+      setSuccess('Profile configured and logged in!');
+      setTimeout(() => navigate(getDashboardRoute(loggedUser.role)), 1000);
+    } catch (err: any) {
+      setError(err.response?.data?.detail || 'Verification failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResendOtp = async () => {
+    setError('');
+    setSuccess('');
+    setLoading(true);
+    try {
+      await api.post('/auth/resend-otp', { email });
+      setSuccess('A new verification code has been sent to your email!');
+    } catch (err: any) {
+      setError(err.response?.data?.detail || 'Failed to resend code. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -244,6 +284,11 @@ export const LoginRegister: React.FC = () => {
           role: devUser.role,
           blood_group: devUser.profileData ? (devUser.profileData.blood_group_required || devUser.profileData.blood_group) : undefined,
         });
+        // Mock verify immediately using the static '123456' code
+        await api.post('/auth/verify', {
+          email: devUser.email,
+          code: '123456'
+        });
         const loginResp = await api.post('/auth/login', {
           email: devUser.email,
           password: pass
@@ -334,159 +379,234 @@ export const LoginRegister: React.FC = () => {
               </div>
             )}
 
-            <form onSubmit={handleAuth} className="flex flex-col gap-4">
-              {isRegister && (
+            {showVerification ? (
+              <form onSubmit={handleVerify} className="flex flex-col gap-4">
                 <div>
                   <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
-                    Full Name
+                    Enter 6-Digit Verification Code
                   </label>
                   <div className="relative">
-                    <UserIcon className="absolute left-3.5 top-3 text-slate-400 w-4.5 h-4.5" />
+                    <CheckCircle2 className="absolute left-3.5 top-3 text-slate-400 w-4.5 h-4.5" />
                     <input
                       type="text"
-                      placeholder="Jane Doe"
+                      maxLength={6}
+                      placeholder="XXXXXX"
+                      className="w-full bg-white/40 dark:bg-slate-900/30 border border-slate-200 dark:border-slate-800 focus:border-rose-500 dark:focus:border-rose-500 focus:ring-1 focus:ring-rose-500 outline-none rounded-xl pl-11 pr-3 py-2 text-sm transition-all text-slate-800 dark:text-slate-100 font-mono tracking-widest text-center"
+                      value={verificationCode}
+                      onChange={(e) => setVerificationCode(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <p className="text-[10px] text-slate-400 font-semibold mt-2">
+                    We've sent a 6-digit verification code to your email.
+                  </p>
+                </div>
+
+                <button 
+                  type="submit" 
+                  className="w-full bg-rose-500 hover:bg-rose-600 text-white font-bold py-2.5 px-4 rounded-xl shadow-md transition-all text-xs uppercase tracking-wider mt-2 flex items-center justify-center gap-1.5" 
+                  disabled={loading}
+                >
+                  {loading && <div className="animate-spin rounded-full h-3.5 w-3.5 border-2 border-white/20 border-t-white"></div>}
+                  Verify & Continue
+                </button>
+
+                <div className="flex items-center justify-between mt-4">
+                  <button
+                    type="button"
+                    className="text-xs font-bold text-slate-500 hover:underline"
+                    onClick={() => {
+                      setShowVerification(false);
+                      setError('');
+                    }}
+                  >
+                    Back to Register
+                  </button>
+
+                  <button
+                    type="button"
+                    className="text-xs font-bold text-rose-500 hover:underline disabled:opacity-50"
+                    onClick={handleResendOtp}
+                    disabled={loading}
+                  >
+                    Resend Code
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <form onSubmit={handleAuth} className="flex flex-col gap-4">
+                {isRegister && (
+                  <div>
+                    <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
+                      Full Name
+                    </label>
+                    <div className="relative">
+                      <UserIcon className="absolute left-3.5 top-3 text-slate-400 w-4.5 h-4.5" />
+                      <input
+                        type="text"
+                        placeholder="Jane Doe"
+                        className="w-full bg-white/40 dark:bg-slate-900/30 border border-slate-200 dark:border-slate-800 focus:border-rose-500 dark:focus:border-rose-500 focus:ring-1 focus:ring-rose-500 outline-none rounded-xl pl-11 pr-3 py-2 text-sm transition-all text-slate-800 dark:text-slate-100"
+                        value={fullName}
+                        onChange={(e) => setFullName(e.target.value)}
+                        required={isRegister}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                <div>
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
+                    Email Address
+                  </label>
+                  <div className="relative">
+                    <Mail className="absolute left-3.5 top-3 text-slate-400 w-4.5 h-4.5" />
+                    <input
+                      type="email"
+                      placeholder="email@example.com"
                       className="w-full bg-white/40 dark:bg-slate-900/30 border border-slate-200 dark:border-slate-800 focus:border-rose-500 dark:focus:border-rose-500 focus:ring-1 focus:ring-rose-500 outline-none rounded-xl pl-11 pr-3 py-2 text-sm transition-all text-slate-800 dark:text-slate-100"
-                      value={fullName}
-                      onChange={(e) => setFullName(e.target.value)}
-                      required={isRegister}
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
                     />
                   </div>
                 </div>
-              )}
 
-              <div>
-                <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
-                  Email Address
-                </label>
-                <div className="relative">
-                  <Mail className="absolute left-3.5 top-3 text-slate-400 w-4.5 h-4.5" />
-                  <input
-                    type="email"
-                    placeholder="email@example.com"
-                    className="w-full bg-white/40 dark:bg-slate-900/30 border border-slate-200 dark:border-slate-800 focus:border-rose-500 dark:focus:border-rose-500 focus:ring-1 focus:ring-rose-500 outline-none rounded-xl pl-11 pr-3 py-2 text-sm transition-all text-slate-800 dark:text-slate-100"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
-                  Password
-                </label>
-                <div className="relative">
-                  <Lock className="absolute left-3.5 top-3 text-slate-400 w-4.5 h-4.5" />
-                  <input
-                    type="password"
-                    placeholder="••••••••"
-                    className="w-full bg-white/40 dark:bg-slate-900/30 border border-slate-200 dark:border-slate-800 focus:border-rose-500 dark:focus:border-rose-500 focus:ring-1 focus:ring-rose-500 outline-none rounded-xl pl-11 pr-3 py-2 text-sm transition-all text-slate-800 dark:text-slate-100"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                  />
-                </div>
-              </div>
-
-              {isRegister && (
-                <>
+                {isRegister && (
                   <div>
                     <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
-                      Choose Role
+                      Phone Number (Optional)
                     </label>
-                    <select
-                      className="w-full bg-white/40 dark:bg-slate-900/30 border border-slate-200 dark:border-slate-800 focus:border-rose-500 dark:focus:border-rose-500 focus:ring-1 focus:ring-rose-500 outline-none rounded-xl px-3 py-2.5 text-xs font-semibold text-slate-800 dark:text-slate-100"
-                      value={role}
-                      onChange={(e: any) => setRole(e.target.value)}
-                    >
-                      <option value="patient">Patient (Needs Blood)</option>
-                      <option value="donor">Donor (Donates Blood)</option>
-                      <option value="blood_bank">Blood Bank Desk</option>
-                      <option value="coordinator">Coordinator Desk</option>
-                    </select>
+                    <div className="relative">
+                      <Phone className="absolute left-3.5 top-3 text-slate-400 w-4.5 h-4.5" />
+                      <input
+                        type="tel"
+                        placeholder="+919876543210 (Optional)"
+                        className="w-full bg-white/40 dark:bg-slate-900/30 border border-slate-200 dark:border-slate-800 focus:border-rose-500 dark:focus:border-rose-500 focus:ring-1 focus:ring-rose-500 outline-none rounded-xl pl-11 pr-3 py-2 text-sm transition-all text-slate-800 dark:text-slate-100"
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                        required={false}
+                      />
+                    </div>
                   </div>
+                )}
 
-                  {(role === 'patient' || role === 'donor') && (
+                <div>
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
+                    Password
+                  </label>
+                  <div className="relative">
+                    <Lock className="absolute left-3.5 top-3 text-slate-400 w-4.5 h-4.5" />
+                    <input
+                      type="password"
+                      placeholder="••••••••"
+                      className="w-full bg-white/40 dark:bg-slate-900/30 border border-slate-200 dark:border-slate-800 focus:border-rose-500 dark:focus:border-rose-500 focus:ring-1 focus:ring-rose-500 outline-none rounded-xl pl-11 pr-3 py-2 text-sm transition-all text-slate-800 dark:text-slate-100"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                    />
+                  </div>
+                </div>
+
+                {isRegister && (
+                  <>
                     <div>
                       <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
-                        Blood Group <span className="text-rose-500">*</span>
+                        Choose Role
                       </label>
                       <select
                         className="w-full bg-white/40 dark:bg-slate-900/30 border border-slate-200 dark:border-slate-800 focus:border-rose-500 dark:focus:border-rose-500 focus:ring-1 focus:ring-rose-500 outline-none rounded-xl px-3 py-2.5 text-xs font-semibold text-slate-800 dark:text-slate-100"
-                        value={bloodGroup}
-                        onChange={(e) => setBloodGroup(e.target.value)}
-                        required
+                        value={role}
+                        onChange={(e: any) => setRole(e.target.value)}
                       >
-                        <option value="">Select Blood Group</option>
-                        <option value="A+">A+</option>
-                        <option value="A-">A-</option>
-                        <option value="B+">B+</option>
-                        <option value="B-">B-</option>
-                        <option value="AB+">AB+</option>
-                        <option value="AB-">AB-</option>
-                        <option value="O+">O+</option>
-                        <option value="O-">O-</option>
+                        <option value="patient">Patient (Needs Blood)</option>
+                        <option value="donor">Donor (Donates Blood)</option>
+                        <option value="blood_bank">Blood Bank Desk</option>
+                        <option value="coordinator">Coordinator Desk</option>
                       </select>
                     </div>
-                  )}
 
-                  {role !== 'coordinator' && (
-                    <div className="border border-slate-200/40 dark:border-slate-800/40 p-4.5 rounded-2xl bg-slate-100/30 dark:bg-slate-900/20">
-                      <div className="flex justify-between items-center mb-3">
-                        <span className="text-xs font-extrabold flex items-center gap-1.5 text-slate-700 dark:text-slate-350">
-                          <MapPin className="text-rose-500 w-4 h-4" />
-                          Geolocation Coordinates
-                        </span>
-                        <button
-                          type="button"
-                          className="px-3 py-1 bg-rose-500 hover:bg-rose-600 text-white rounded-lg text-[10px] font-bold uppercase transition-all"
-                          onClick={detectLocation}
-                          disabled={gettingLocation}
+                    {(role === 'patient' || role === 'donor') && (
+                      <div>
+                        <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
+                          Blood Group <span className="text-rose-500">*</span>
+                        </label>
+                        <select
+                          className="w-full bg-white/40 dark:bg-slate-900/30 border border-slate-200 dark:border-slate-800 focus:border-rose-500 dark:focus:border-rose-500 focus:ring-1 focus:ring-rose-500 outline-none rounded-xl px-3 py-2.5 text-xs font-semibold text-slate-800 dark:text-slate-100"
+                          value={bloodGroup}
+                          onChange={(e) => setBloodGroup(e.target.value)}
+                          required
                         >
-                          {gettingLocation ? 'Detecting...' : 'Detect'}
-                        </button>
+                          <option value="">Select Blood Group</option>
+                          <option value="A+">A+</option>
+                          <option value="A-">A-</option>
+                          <option value="B+">B+</option>
+                          <option value="B-">B-</option>
+                          <option value="AB+">AB+</option>
+                          <option value="AB-">AB-</option>
+                          <option value="O+">O+</option>
+                          <option value="O-">O-</option>
+                        </select>
                       </div>
+                    )}
 
-                      {locationError && <p className="text-[10px] text-rose-500 font-bold mb-2">{locationError}</p>}
-
-                      <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <input
-                            type="number"
-                            step="any"
-                            placeholder="Latitude"
-                            className="w-full bg-white/45 dark:bg-slate-900/35 border border-slate-200/50 dark:border-slate-800/55 focus:border-rose-500 dark:focus:border-rose-500 focus:ring-1 focus:ring-rose-500 outline-none rounded-lg px-2.5 py-1.5 text-xs text-slate-800 dark:text-slate-100"
-                            value={latitude || ''}
-                            onChange={(e) => setLatitude(parseFloat(e.target.value))}
-                            required
-                          />
+                    {role !== 'coordinator' && (
+                      <div className="border border-slate-200/40 dark:border-slate-800/40 p-4.5 rounded-2xl bg-slate-100/30 dark:bg-slate-900/20">
+                        <div className="flex justify-between items-center mb-3">
+                          <span className="text-xs font-extrabold flex items-center gap-1.5 text-slate-700 dark:text-slate-350">
+                            <MapPin className="text-rose-500 w-4 h-4" />
+                            Geolocation Coordinates
+                          </span>
+                          <button
+                            type="button"
+                            className="px-3 py-1 bg-rose-500 hover:bg-rose-600 text-white rounded-lg text-[10px] font-bold uppercase transition-all"
+                            onClick={detectLocation}
+                            disabled={gettingLocation}
+                          >
+                            {gettingLocation ? 'Detecting...' : 'Detect'}
+                          </button>
                         </div>
-                        <div>
-                          <input
-                            type="number"
-                            step="any"
-                            placeholder="Longitude"
-                            className="w-full bg-white/45 dark:bg-slate-900/35 border border-slate-200/50 dark:border-slate-800/55 focus:border-rose-500 dark:focus:border-rose-500 focus:ring-1 focus:ring-rose-500 outline-none rounded-lg px-2.5 py-1.5 text-xs text-slate-800 dark:text-slate-100"
-                            value={longitude || ''}
-                            onChange={(e) => setLongitude(parseFloat(e.target.value))}
-                            required
-                          />
+
+                        {locationError && <p className="text-[10px] text-rose-500 font-bold mb-2">{locationError}</p>}
+
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <input
+                              type="number"
+                              step="any"
+                              placeholder="Latitude"
+                              className="w-full bg-white/45 dark:bg-slate-900/35 border border-slate-200/50 dark:border-slate-800/55 focus:border-rose-500 dark:focus:border-rose-500 focus:ring-1 focus:ring-rose-500 outline-none rounded-lg px-2.5 py-1.5 text-xs text-slate-800 dark:text-slate-100"
+                              value={latitude || ''}
+                              onChange={(e) => setLatitude(parseFloat(e.target.value))}
+                              required
+                            />
+                          </div>
+                          <div>
+                            <input
+                              type="number"
+                              step="any"
+                              placeholder="Longitude"
+                              className="w-full bg-white/45 dark:bg-slate-900/35 border border-slate-200/50 dark:border-slate-800/55 focus:border-rose-500 dark:focus:border-rose-500 focus:ring-1 focus:ring-rose-500 outline-none rounded-lg px-2.5 py-1.5 text-xs text-slate-800 dark:text-slate-100"
+                              value={longitude || ''}
+                              onChange={(e) => setLongitude(parseFloat(e.target.value))}
+                              required
+                            />
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  )}
-                </>
-              )}
+                    )}
+                  </>
+                )}
 
-              <button 
-                type="submit" 
-                className="w-full bg-rose-500 hover:bg-rose-600 text-white font-bold py-2.5 px-4 rounded-xl shadow-md transition-all text-xs uppercase tracking-wider mt-2 flex items-center justify-center gap-1.5" 
-                disabled={loading}
-              >
-                {loading && <div className="animate-spin rounded-full h-3.5 w-3.5 border-2 border-white/20 border-t-white"></div>}
-                {isRegister ? 'Sign Up' : 'Log In'}
-              </button>
-            </form>
+                <button 
+                  type="submit" 
+                  className="w-full bg-rose-500 hover:bg-rose-600 text-white font-bold py-2.5 px-4 rounded-xl shadow-md transition-all text-xs uppercase tracking-wider mt-2 flex items-center justify-center gap-1.5" 
+                  disabled={loading}
+                >
+                  {loading && <div className="animate-spin rounded-full h-3.5 w-3.5 border-2 border-white/20 border-t-white"></div>}
+                  {isRegister ? 'Sign Up' : 'Log In'}
+                </button>
+              </form>
+            )}
 
             {/* Divider */}
             <div className="flex items-center justify-center my-6 gap-3 text-[10px] font-black uppercase tracking-wider text-slate-400">

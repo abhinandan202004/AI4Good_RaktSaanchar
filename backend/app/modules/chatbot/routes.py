@@ -82,7 +82,9 @@ async def chat(
             Backend Data:
             {data}
 
-            Answer the user naturally.
+            Answer the user naturally based ONLY on the Backend Data. 
+            If the backend data contains an error (e.g. 'not found') or is empty, tell the user gracefully.
+            Do not invent or hallucinate data.
             """
         )
 

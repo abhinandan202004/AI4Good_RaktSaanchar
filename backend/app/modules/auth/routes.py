@@ -10,6 +10,8 @@ from app.modules.auth.schemas import (
     RefreshRequest,
     AccessTokenResponse,
     UserOut,
+    VerifyRequest,
+    ResendOtpRequest,
 )
 from app.modules.auth.service import AuthService
 
@@ -24,6 +26,12 @@ def _svc(db: Session = Depends(get_db), r: redis_lib.Redis = Depends(get_redis))
 def register(data: RegisterRequest, svc: AuthService = Depends(_svc)):
     """Register a new user (donor / patient / coordinator / blood_bank)."""
     return svc.register(data)
+
+
+@router.post("/verify", status_code=status.HTTP_200_OK)
+def verify(data: VerifyRequest, svc: AuthService = Depends(_svc)):
+    """Verify user registration code."""
+    return svc.verify(data.email, data.code)
 
 
 @router.post("/login", response_model=TokenResponse)
@@ -51,3 +59,9 @@ def logout(
 def me(current_user=Depends(get_current_user)):
     """Return the currently authenticated user's profile."""
     return current_user
+
+
+@router.post("/resend-otp", status_code=status.HTTP_200_OK)
+def resend_otp(data: ResendOtpRequest, svc: AuthService = Depends(_svc)):
+    """Resend verification code to user's email."""
+    return svc.resend_otp(data.email)
