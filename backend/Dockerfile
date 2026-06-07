@@ -2,6 +2,11 @@ FROM python:3.12-slim
 
 WORKDIR /app
 
+# System dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc \
+    && rm -rf /var/lib/apt/lists/*
+
 COPY requirements.txt .
 
 # ── Step 1: lightweight core deps ─────────────────────────────────────────────
@@ -23,7 +28,7 @@ RUN pip install --no-cache-dir \
     joblib \
     boto3
 
-# ── Step 2: ML deps (installed separately to avoid OOM during build) ──────────
+# ── Step 2: ML deps ────────────────────────────────────────────────────────────
 RUN pip install --no-cache-dir numpy pandas scikit-learn
 RUN pip install --no-cache-dir xgboost
 
@@ -33,4 +38,10 @@ RUN pip install --no-cache-dir mistralai sarvamai langchain langchain-community 
 
 COPY . .
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+# Create uploads directory
+RUN mkdir -p /app/uploads/validation_reports
+
+EXPOSE 8000
+
+# Production: no --reload, use $PORT env var (Render injects this)
+CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]

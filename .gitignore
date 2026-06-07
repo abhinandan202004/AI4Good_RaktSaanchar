@@ -75,13 +75,13 @@ backend/uploads/
 backend/uploads/validation_reports/
 backend/uploads/**/*.pdf
 
-# Production secrets (never commit)
-backend/.env.prod
-*.env.prod
-
-# Frontend build output
-frontend/dist/
-
-# Node modules
-node_modules/
+# Node
 frontend/node_modules/
+frontend/dist/
+node_modules/
+
+# SQLite test DB
+*.db
+
+# render.yaml should NOT be ignored — it must be committed
+# !render.yaml

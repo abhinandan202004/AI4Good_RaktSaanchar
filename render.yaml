@@ -1,0 +1,63 @@
+databases:
+  - name: raktsaanchar-db
+    databaseName: rakt
+    user: postgres
+    plan: free
+
+services:
+  # ── Redis ──────────────────────────────────────────────────────────────────
+  - type: redis
+    name: raktsaanchar-redis
+    plan: free
+    ipAllowList: []   # only internal access
+
+  # ── Backend (FastAPI) ──────────────────────────────────────────────────────
+  - type: web
+    name: raktsaanchar-backend
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: raktsaanchar-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: raktsaanchar-redis
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true
+      - key: ALGORITHM
+        value: HS256
+      - key: ACCESS_TOKEN_EXPIRE_MINUTES
+        value: "30"
+      - key: REFRESH_TOKEN_EXPIRE_DAYS
+        value: "7"
+      - key: DEBUG
+        value: "False"
+      - key: AWS_SNS_ENABLED
+        value: "True"
+      - key: AWS_REGION
+        value: us-east-1
+      # Set these manually in Render dashboard (sensitive):
+      # AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_SNS_TOPIC_ARN,
+      # AWS_SES_SENDER, MISTRAL_API_KEY, SARVAM_API_KEY
+
+  # ── Frontend (React Static Site) ───────────────────────────────────────────
+  - type: web
+    name: raktsaanchar-frontend
+    runtime: static
+    buildCommand: cd frontend && npm install --legacy-peer-deps && npm run build
+    staticPublishPath: ./frontend/dist
+    plan: free
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: VITE_API_BASE_URL
+        value: https://raktsaanchar-backend.onrender.com/api/v1
