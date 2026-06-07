@@ -1,7 +1,6 @@
 databases:
   - name: raktsaanchar-db
-    databaseName: rakt
-    user: postgres
+    databaseName: raktsaanchar
     plan: free
 
 services:
