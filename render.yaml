@@ -16,7 +16,6 @@ services:
     runtime: docker
     dockerfilePath: ./backend/Dockerfile
     dockerContext: ./backend
-    plan: free
     healthCheckPath: /health
     envVars:
       - key: DATABASE_URL
@@ -52,7 +51,6 @@ services:
     runtime: static
     buildCommand: cd frontend && npm install --legacy-peer-deps && npm run build
     staticPublishPath: ./frontend/dist
-    plan: free
     routes:
       - type: rewrite
         source: /*
