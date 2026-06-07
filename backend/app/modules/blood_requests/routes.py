@@ -103,7 +103,7 @@ def accept_open(
     donor_repo: DonorRepository = Depends(_donor_repo),
 ):
     """
-    Uber-style endpoint for any compatible, available donor to accept a pending blood request.
+    Direct claim endpoint for any compatible, available donor to accept a pending blood request.
     """
     donor = donor_repo.get_by_user_id(current_user.id)
     if not donor:
@@ -119,7 +119,7 @@ def accept_bank(
     current_user=Depends(require_roles("blood_bank")),
 ):
     """
-    Uber-style endpoint for a blood bank to accept a pending blood request.
+    Direct claim endpoint for a blood bank to accept a pending blood request.
     """
     return svc.accept_blood_bank_request(req_id, current_user.id)
 

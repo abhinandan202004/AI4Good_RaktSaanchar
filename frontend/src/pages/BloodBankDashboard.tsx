@@ -229,7 +229,7 @@ export const BloodBankDashboard: React.FC = () => {
   };
 
   const acceptPatientRequest = async (reqId: number) => {
-    if (!window.confirm('Do you want to accept this request? (Like Uber - once accepted, your blood bank commits to fulfill it).')) return;
+    if (!window.confirm('Do you want to accept this request? (Once accepted, your blood bank commits to fulfill it).')) return;
     setError('');
     setSuccess('');
     try {
@@ -718,7 +718,7 @@ export const BloodBankDashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Uber-Style Request Claim Queue */}
+        {/* Patient Request Claim Queue */}
         <div className="glass-panel border border-slate-200/50 dark:border-slate-800/40 p-6">
           <h3 className="text-base font-extrabold text-slate-800 dark:text-slate-200 border-b border-slate-200/50 dark:border-slate-800/50 pb-3 flex items-center gap-1.5">
             <Inbox className="text-rose-500 w-5 h-5" />
@@ -746,7 +746,7 @@ export const BloodBankDashboard: React.FC = () => {
                     onClick={() => acceptPatientRequest(req.id)}
                     className="bg-rose-500 hover:bg-rose-600 text-white font-extrabold rounded-xl py-2 px-4 shadow-md text-[10px] uppercase tracking-wider transition-all"
                   >
-                    Fulfill (Uber-Style)
+                    Claim Request
                   </button>
                 </div>
               ))

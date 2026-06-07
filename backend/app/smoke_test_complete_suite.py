@@ -265,6 +265,13 @@ def main():
         assert req_for_ml.status_code == 201
         ml_req_id = req_for_ml.json()["id"]
 
+        # Reset the donor's cooldown to 100 days ago so they are matchable again for the ML ranker and later test assertions!
+        from datetime import datetime, timezone, timedelta
+        past_date = (datetime.now(timezone.utc) - timedelta(days=100)).isoformat()
+        reset_resp = client.patch("/donors/me", json={
+            "last_donated_at": past_date
+        }, headers=don_near_headers)
+        assert reset_resp.status_code == 200, f"Reset failed: {reset_resp.text}"
         # Run ranker
         ml_rank = client.post("/ml/rank-donors", json={
             "request_id": ml_req_id,

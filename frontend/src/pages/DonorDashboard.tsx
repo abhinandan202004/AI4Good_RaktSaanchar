@@ -166,7 +166,7 @@ export const DonorDashboard: React.FC = () => {
       setError('Accept block: You are already assigned to an active request. Please fulfill it first.');
       return;
     }
-    if (!window.confirm('Do you want to accept this urgent request? (Like Uber - once accepted, you commit to donate).')) return;
+    if (!window.confirm('Do you want to accept this urgent request? (Once accepted, you commit to donate).')) return;
     setError('');
     setSuccess('');
     try {
@@ -638,9 +638,10 @@ export const DonorDashboard: React.FC = () => {
                     </div>
                     <button
                       onClick={() => acceptRequest(req.id)}
-                      className="bg-rose-500 hover:bg-rose-650 text-white font-extrabold rounded-xl py-2 px-4 shadow-md text-[10px] uppercase tracking-wider transition-all"
+                      disabled={isFlagged || isOnCooldown || hasActiveAssignment}
+                      className="bg-rose-500 hover:bg-rose-650 disabled:opacity-50 disabled:cursor-not-allowed text-white font-extrabold rounded-xl py-2 px-4 shadow-md text-[10px] uppercase tracking-wider transition-all"
                     >
-                      Accept (Uber-Style)
+                      Accept
                     </button>
                   </div>
                 ))

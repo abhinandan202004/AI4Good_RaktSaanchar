@@ -172,11 +172,19 @@ class BloodBankService:
             if is_safe:
                 # Award points to the verified donor
                 donor.points = (donor.points or 0) + 10
+                # Apply 90-day cooldown by setting last_donated_at
+                from datetime import datetime, timezone
+                donor.last_donated_at = datetime.now(timezone.utc)
                 self.repo.db.commit()
                 self.notif.send_to_user(
                     donor.user_id,
                     "🎖️ Points Earned!",
                     f"Congratulations! Your blood donation has been verified. You earned 10 points! Total points: {donor.points}"
+                )
+                self.notif.send_to_user(
+                    donor.user_id,
+                    "⏳ Cooldown Period Active",
+                    "Your blood donation validation report has been approved. You are now placed on a 90-day recovery cooldown to protect your health. Match acceptance has been disabled."
                 )
             else:
                 # Deactivate/Flag the donor due to rejected lab report

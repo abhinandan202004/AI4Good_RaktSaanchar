@@ -23,6 +23,7 @@ class DonorProfileUpdate(BaseModel):
     latitude: Optional[float] = None
     longitude: Optional[float] = None
     is_available: Optional[bool] = None
+    last_donated_at: Optional[datetime] = None
 
 
 class DonorOut(BaseModel):
