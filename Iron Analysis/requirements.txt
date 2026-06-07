@@ -1,0 +1,35 @@
+# FastAPI
+fastapi==0.116.1
+uvicorn[standard]==0.35.0
+
+# Validation
+pydantic==2.11.7
+
+# Environment
+python-dotenv==1.1.1
+python-multipart==0.0.20
+
+# PDF Processing
+pymupdf==1.26.3
+
+# OCR
+easyocr==1.7.2
+pillow==11.3.0
+
+# Data Processing
+numpy==2.3.1
+pandas==2.3.0
+
+# Machine Learning
+scikit-learn==1.7.0
+xgboost==3.0.2
+joblib==1.5.1
+
+# HTTP Client
+requests==2.32.4
+
+# Logging
+loguru==0.7.3
+
+# Mistral AI
+mistralai==1.9.3
