@@ -74,3 +74,14 @@ pyvenv.cfg
 backend/uploads/
 backend/uploads/validation_reports/
 backend/uploads/**/*.pdf
+
+# Production secrets (never commit)
+backend/.env.prod
+*.env.prod
+
+# Frontend build output
+frontend/dist/
+
+# Node modules
+node_modules/
+frontend/node_modules/
