@@ -10,13 +10,26 @@ services:
     plan: free
     ipAllowList: []   # only internal access
 
-  # ── Backend (FastAPI) ──────────────────────────────────────────────────────
+  # ── Nginx API Gateway ─────────────────────────────────────────────────────
   - type: web
-    name: raktsaanchar-backend
+    name: raktsaanchar-gateway
     runtime: docker
-    dockerfilePath: ./backend/Dockerfile
-    dockerContext: ./backend
-    healthCheckPath: /health
+    dockerfilePath: ./infra/Dockerfile
+    dockerContext: ./infra
+    plan: free
+    ports:
+      - port: 80
+    envVars:
+      - key: PORT
+        value: 80
+
+  # ── Auth Service ──────────────────────────────────────────────────────────
+  - type: web
+    name: raktsaanchar-auth-service
+    runtime: docker
+    dockerfilePath: ./services/auth-service/Dockerfile
+    dockerContext: ./services/auth-service
+    plan: free
     envVars:
       - key: DATABASE_URL
         fromDatabase:
@@ -35,15 +48,110 @@ services:
         value: "30"
       - key: REFRESH_TOKEN_EXPIRE_DAYS
         value: "7"
-      - key: DEBUG
-        value: "False"
-      - key: AWS_SNS_ENABLED
-        value: "True"
-      - key: AWS_REGION
-        value: us-east-1
-      # Set these manually in Render dashboard (sensitive):
-      # AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_SNS_TOPIC_ARN,
-      # AWS_SES_SENDER, MISTRAL_API_KEY, SARVAM_API_KEY
+
+  # ── Core Service ──────────────────────────────────────────────────────────
+  - type: web
+    name: raktsaanchar-core-service
+    runtime: docker
+    dockerfilePath: ./services/core-service/Dockerfile
+    dockerContext: ./services/core-service
+    plan: free
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: raktsaanchar-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: raktsaanchar-redis
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true
+      - key: ALGORITHM
+        value: HS256
+      - key: ML_SERVICE_URL
+        value: http://raktsaanchar-ml-service:8005
+
+  # ── Notification Service ──────────────────────────────────────────────────
+  - type: web
+    name: raktsaanchar-notification-service
+    runtime: docker
+    dockerfilePath: ./services/notification-service/Dockerfile
+    dockerContext: ./services/notification-service
+    plan: free
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: raktsaanchar-db
+          property: connectionString
+      - key: CORE_DB_URL
+        fromDatabase:
+          name: raktsaanchar-db
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true
+      # Set manually on Render: SMTP_USER, SMTP_PASS, NTFY_BASE_URL, NTFY_TOPIC_PREFIX
+
+  # ── Chat Service ──────────────────────────────────────────────────────────
+  - type: web
+    name: raktsaanchar-chat-service
+    runtime: docker
+    dockerfilePath: ./services/chat-service/Dockerfile
+    dockerContext: ./services/chat-service
+    plan: free
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: raktsaanchar-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: raktsaanchar-redis
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true
+      - key: ALGORITHM
+        value: HS256
+
+  # ── ML Service ────────────────────────────────────────────────────────────
+  - type: web
+    name: raktsaanchar-ml-service
+    runtime: docker
+    dockerfilePath: ./services/ml-service/Dockerfile
+    dockerContext: ./services/ml-service
+    plan: free
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: raktsaanchar-db
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true
+      - key: ALGORITHM
+        value: HS256
+
+  # ── Chatbot Service ───────────────────────────────────────────────────────
+  - type: web
+    name: raktsaanchar-chatbot-service
+    runtime: docker
+    dockerfilePath: ./services/chatbot-service/Dockerfile
+    dockerContext: ./services/chatbot-service
+    plan: free
+    envVars:
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: raktsaanchar-redis
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true
+      - key: ALGORITHM
+        value: HS256
+      - key: CORE_SERVICE_URL
+        value: http://raktsaanchar-core-service:8002
+      # Set manually on Render: MISTRAL_API_KEY, SARVAM_API_KEY
 
   # ── Frontend (React Static Site) ───────────────────────────────────────────
   - type: web
@@ -57,4 +165,6 @@ services:
         destination: /index.html
     envVars:
       - key: VITE_API_BASE_URL
-        value: https://raktsaanchar-backend.onrender.com/api/v1
+        value: https://raktsaanchar-gateway.onrender.com/api/v1
+      - key: VITE_WS_URL
+        value: wss://raktsaanchar-gateway.onrender.com/api/v1/chat/ws

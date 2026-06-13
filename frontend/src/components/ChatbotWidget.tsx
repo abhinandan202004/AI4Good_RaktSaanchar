@@ -41,7 +41,7 @@ export const ChatbotWidget: React.FC = () => {
     setIsLoading(true);
 
     try {
-      const response = await api.post('/chat/', { message: userText });
+      const response = await api.post('/chatbot/', { message: userText });
       setHistory((prev) => [
         ...prev,
         { sender: 'assistant', text: response.data.response },

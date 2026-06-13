@@ -63,40 +63,27 @@ It uses **Machine Learning** for smart donor ranking and blood transfusion sched
 ## 🏗️ Architecture
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│                     CLIENT LAYER                        │
-│   React 19 + TypeScript + Tailwind + Vite               │
-│   Role-based dashboards: Patient | Donor | BloodBank    │
-│   Coordinator | Chatbot widget | Leaflet Maps           │
-└──────────────────────┬──────────────────────────────────┘
-                       │ HTTPS / WebSocket
-┌──────────────────────▼──────────────────────────────────┐
-│                    API LAYER                            │
-│   FastAPI (Python 3.12) — 13 modules                   │
-│   Auth | Users | Donors | Patients | BloodRequests      │
-│   Notifications | Chat | BloodBank | Coordinator        │
-│   ML | Leaderboard | Transfusion | Chatbot              │
-└──────┬────────────────────────────┬─────────────────────┘
-       │                            │
-┌──────▼──────┐          ┌──────────▼──────────┐
-│  PostgreSQL │          │       Redis          │
-│  (primary   │          │  (caching, sessions) │
-│   store)    │          └──────────────────────┘
-└─────────────┘
-       │
-┌──────▼──────────────────────────────────────────────────┐
-│                  AI / ML LAYER                          │
-│   XGBoost donor ranking model (.pkl)                   │
-│   XGBoost thalassemia transfusion model (.pkl)          │
-│   Mistral AI (LLM) + Sarvam AI (translation)           │
-│   LangChain + FAISS (RAG vector store)                  │
-│   Sentence Transformers (embeddings)                    │
-└─────────────────────────────────────────────────────────┘
-       │
-┌──────▼──────────────────────────────────────────────────┐
-│                AWS SERVICES                             │
-│   SNS (SMS alerts) | SES (email) | S3 (reports)        │
-└─────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────┐
+│                         CLIENT LAYER                                │
+│   React 19 + TypeScript + Tailwind + Vite                           │
+│   Subscribes to real-time ntfy.sh server-sent events (SSE)          │
+└──────────────────────────────┬──────────────────────────────────────┘
+                               │ HTTPS / WebSocket
+┌──────────────────────────────▼──────────────────────────────────────┐
+│                    API GATEWAY (Nginx)                              │
+│   Exposes port 80, routes traffic based on URL path prefixes        │
+└──────┬────────────┬───────────┬──────────┬──────────┬───────────────┘
+       │            │           │          │          │
+  auth-svc    core-svc   notif-svc   chat-svc   ml-svc   chatbot-svc
+   :8001       :8002      :8003       :8004      :8005     :8006
+       │            │           │          │          │
+       └────────────┴─────┬─────┴──────────┘          │
+                          │                           │
+                   RabbitMQ (Event Broker)            │
+                          │                           │
+                ┌─────────┴──────────┐                │
+             PostgreSQL            Redis         Local Storage
+            (5 schemas)      (caching/pubsub)   (.pkl models)
 ```
 
 ---
@@ -114,9 +101,9 @@ cd AI4Good_RaktSaanchar
 
 ### 2. Configure environment
 ```bash
-cp backend/.env.example backend/.env
-# Edit backend/.env and fill in your API keys:
-# MISTRAL_API_KEY, SARVAM_API_KEY, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
+cp .env.example .env
+# Edit .env and fill in your API keys:
+# MISTRAL_API_KEY, SARVAM_API_KEY
 ```
 
 ### 3. Run everything
@@ -127,8 +114,10 @@ docker compose up --build
 | Service | URL |
 |---|---|
 | 🌐 Frontend | http://localhost:5173 |
-| ⚙️ Backend API | http://localhost:8000 |
-| 📖 Swagger Docs | http://localhost:8000/docs |
+| ⚙️ API Gateway (API Endpoint) | http://localhost/api/v1 |
+| 🔔 ntfy.sh UI (Push messages) | http://localhost:8080 |
+| 🐇 RabbitMQ Admin UI | http://localhost:15672 (rakt / rakt) |
+
 
 ---
 
@@ -191,34 +180,23 @@ AI4Good_RaktSaanchar/
 │   │   └── services/api.ts      # Axios instance
 │   └── package.json
 │
-├── backend/                     # FastAPI application
-│   ├── app/
-│   │   ├── main.py              # App entrypoint + all routers
-│   │   ├── core/
-│   │   │   ├── config.py        # Pydantic settings
-│   │   │   ├── database.py      # SQLAlchemy engine
-│   │   │   ├── dependencies.py  # Auth dependencies
-│   │   │   └── sns_service.py   # AWS SNS/SES integration
-│   │   └── modules/             # 13 feature modules
-│   │       ├── auth/            # JWT login/register
-│   │       ├── users/           # User management
-│   │       ├── donors/          # Donor profiles & matching
-│   │       ├── patients/        # Patient profiles
-│   │       ├── blood_requests/  # Request lifecycle
-│   │       ├── notifications/   # In-app notifications
-│   │       ├── chat/            # WebSocket chat rooms
-│   │       ├── blood_bank/      # Inventory & validation
-│   │       ├── coordinator/     # Admin oversight
-│   │       ├── ml/              # XGBoost donor ranking
-│   │       ├── leaderboard/     # Points & badges
-│   │       ├── transfusion/     # Thalassemia scheduling
-│   │       └── chatbot/         # RAG chatbot (Mistral + FAISS)
-│   ├── Dockerfile
-│   └── requirements.txt
+├── services/                    # Microservices
+│   ├── auth-service/            # Port 8001 (Auth & Users)
+│   ├── core-service/            # Port 8002 (Donors, Patients, Requests, Inventory)
+│   ├── notification-service/     # Port 8003 (SMTP & ntfy.sh alerts)
+│   ├── chat-service/            # Port 8004 (WebSockets & Rooms)
+│   ├── ml-service/              # Port 8005 (XGBoost inference)
+│   └── chatbot-service/         # Port 8006 (RAG & Translation assistant)
 │
-├── Chatbot/                     # Standalone chatbot service
-├── Iron Analysis/               # Iron overload ML module
-├── Patient_Tranfusion_Schedule_Model/  # Transfusion ML model
+├── infra/                       # Infrastructure configuration
+│   ├── nginx.conf               # API Gateway router config
+│   ├── init.sql                 # PostgreSQL schemas creation
+│   └── Dockerfile               # Nginx gateway Dockerfile
+│
+├── models/                      # Mounted folder for ML .pkl files
+├── Chatbot/                     # Original standalone chatbot code (reference)
+├── Iron Analysis/               # Iron overload ML module (reference)
+├── Patient_Tranfusion_Schedule_Model/  # Transfusion ML model (reference)
 ├── docker-compose.yml           # Local dev orchestration
 └── render.yaml                  # Render deployment blueprint
 ```
@@ -233,7 +211,13 @@ This project is deployed on [Render](https://render.com) using a Blueprint (`ren
 |---|---|---|
 | `raktsaanchar-db` | PostgreSQL 15 | Free |
 | `raktsaanchar-redis` | Redis 7 | Free |
-| `raktsaanchar-backend` | Docker Web Service | Free |
+| `raktsaanchar-gateway` | Docker Web Service (Gateway) | Free |
+| `raktsaanchar-auth-service` | Docker Web Service | Free |
+| `raktsaanchar-core-service` | Docker Web Service | Free |
+| `raktsaanchar-notification-service` | Docker Web Service | Free |
+| `raktsaanchar-chat-service` | Docker Web Service | Free |
+| `raktsaanchar-ml-service` | Docker Web Service | Free |
+| `raktsaanchar-chatbot-service` | Docker Web Service | Free |
 | `raktsaanchar-frontend` | Static Site | Free |
 
 ### Deploy your own instance

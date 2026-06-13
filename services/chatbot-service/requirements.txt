@@ -1,0 +1,17 @@
+fastapi
+uvicorn[standard]
+python-dotenv
+pydantic-settings
+redis
+httpx
+python-jose[cryptography]
+python-multipart
+mistralai
+sentence-transformers
+faiss-cpu
+langchain
+langchain-community
+sarvamai
+pandas
+numpy<2.0
+
