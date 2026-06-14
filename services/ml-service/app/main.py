@@ -13,6 +13,18 @@ from app.core.database import Base, engine
 # It doesn't create its own tables; Base.metadata.create_all is a no-op here
 # because all referenced tables live in the core schema.
 
+# ── Register all ORM models in SQLAlchemy registry at startup ───────────────
+from app.modules.users.models import User                              # noqa
+from app.modules.donors.models import Donor                            # noqa
+from app.modules.patients.models import Patient                        # noqa
+from app.modules.blood_requests.models import BloodRequest             # noqa
+from app.modules.blood_bank.models import (                            # noqa
+    BloodInventory, BloodUnit, BloodValidationReport, BloodBankProfile
+)
+from app.modules.transfusion.models import TransfusionPrediction       # noqa
+
+Base.metadata.create_all(bind=engine)
+
 app = FastAPI(
     title=settings.APP_NAME,
     version=settings.APP_VERSION,
@@ -34,9 +46,11 @@ API_PREFIX = "/api/v1"
 
 from app.modules.ml.routes import router as ml_router
 from app.modules.transfusion.routes import router as transfusion_router
+from app.modules.iron_overload.routes import router as iron_overload_router
 
 app.include_router(ml_router,         prefix=API_PREFIX)
 app.include_router(transfusion_router, prefix=API_PREFIX)
+app.include_router(iron_overload_router, prefix=API_PREFIX)
 
 
 @app.on_event("startup")

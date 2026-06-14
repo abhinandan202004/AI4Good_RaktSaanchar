@@ -1,4 +1,4 @@
-﻿from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 
 from app.core.dependencies import get_db, get_current_user, require_roles
@@ -11,7 +11,6 @@ from app.modules.blood_requests.schemas import (
 from app.modules.patients.repository import PatientRepository
 from app.modules.donors.repository import DonorRepository
 
-from app.modules.notifications.service import NotificationService
 
 router = APIRouter(prefix="/requests", tags=["Blood Requests"])
 
@@ -20,7 +19,6 @@ def _svc(db: Session = Depends(get_db)) -> BloodRequestService:
     return BloodRequestService(
         BloodRequestRepository(db),
         PatientRepository(db),
-        NotificationService(db),
     )
 
 

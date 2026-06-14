@@ -49,7 +49,7 @@ class BloodRequest(Base):
     patient = relationship("Patient", backref="blood_requests")
     assigned_donor = relationship("Donor", backref="assigned_requests")
     assigned_blood_bank = relationship("User", foreign_keys=[assigned_blood_bank_id], backref="assigned_requests")
-    chat_room = relationship("ChatRoom", back_populates="blood_request", uselist=False)
+    # chat_room = relationship("ChatRoom", back_populates="blood_request", uselist=False)
 
     def __repr__(self):
         return f"<BloodRequest id={self.id} status={self.status} blood={self.blood_group}>"

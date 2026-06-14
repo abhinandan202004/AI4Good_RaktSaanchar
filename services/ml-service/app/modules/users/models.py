@@ -1,6 +1,7 @@
 # Minimal User stub for JWT validation — core-service only reads user id/role
 # from the shared auth schema. We keep a slim local users table for FK lookups.
 from sqlalchemy import Column, Integer, String, Boolean, DateTime, Enum
+from sqlalchemy.orm import relationship
 from datetime import datetime, timezone
 import enum
 
@@ -32,6 +33,11 @@ class User(Base):
         default=lambda: datetime.now(timezone.utc),
         onupdate=lambda: datetime.now(timezone.utc),
     )
+
+    # Relationships to avoid configure events issues
+    donor_profile = relationship("Donor", back_populates="user", uselist=False)
+    patient_profile = relationship("Patient", back_populates="user", uselist=False)
+    blood_bank_profile = relationship("BloodBankProfile", back_populates="user", uselist=False)
 
     # Relationships defined in submodule models via backref
     def __repr__(self):

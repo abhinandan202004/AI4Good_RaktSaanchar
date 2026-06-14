@@ -6,7 +6,7 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
 from app.core.config import settings
-from app.core.database import SessionLocal
+from app.core.database import SessionLocal, CoreSessionLocal
 from app.core.security import decode_token
 
 security_scheme = HTTPBearer()
@@ -20,13 +20,21 @@ def get_db() -> Generator[Session, None, None]:
         db.close()
 
 
+def get_core_db() -> Generator[Session, None, None]:
+    db = CoreSessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+
 def get_redis() -> redis_lib.Redis:
     return redis_lib.from_url(settings.REDIS_URL, decode_responses=True)
 
 
 def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security_scheme),
-    db: Session = Depends(get_db),
+    core_db: Session = Depends(get_core_db),
 ):
     """
     Decodes the JWT (issued by auth-service, shared SECRET_KEY).
@@ -41,12 +49,19 @@ def get_current_user(
     )
 
     token = credentials.credentials
-    payload = decode_token(token)
+    try:
+        payload = decode_token(token)
+        print("DEBUG PAYLOAD:", payload, flush=True)
+    except Exception as e:
+        print("DEBUG DECODE ERROR:", e, flush=True)
+        payload = None
+
     if not payload or payload.get("type") != "access":
         raise credentials_exc
 
     user_id: int = int(payload.get("sub"))
-    user = db.query(User).filter(User.id == user_id, User.is_active == True).first()
+    user = core_db.query(User).filter(User.id == user_id, User.is_active == True).first()
+    print("DEBUG USER FOUND:", user, "FOR ID", user_id, flush=True)
     if not user:
         raise credentials_exc
     return user

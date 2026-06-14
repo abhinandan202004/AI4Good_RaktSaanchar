@@ -47,7 +47,7 @@ class Donor(Base):
     )
 
     user = relationship("User", back_populates="donor_profile")
-    badges = relationship("DonorBadge", back_populates="donor")
+    # badges = relationship("DonorBadge", back_populates="donor")
     # blood_units relationship will be added in Phase 3 when BloodUnit model is created
     # blood_units = relationship("BloodUnit", back_populates="donor")
 
