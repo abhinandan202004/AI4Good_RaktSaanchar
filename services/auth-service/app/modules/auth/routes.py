@@ -12,6 +12,8 @@ from app.modules.auth.schemas import (
     UserOut,
     VerifyRequest,
     ResendOtpRequest,
+    ForgotPasswordRequest,
+    ResetPasswordRequest,
 )
 from app.modules.auth.service import AuthService
 
@@ -65,3 +67,16 @@ def me(current_user=Depends(get_current_user)):
 def resend_otp(data: ResendOtpRequest, svc: AuthService = Depends(_svc)):
     """Resend verification OTP to user's email."""
     return svc.resend_otp(data.email)
+
+
+@router.post("/forgot-password", status_code=status.HTTP_200_OK)
+def forgot_password(data: ForgotPasswordRequest, svc: AuthService = Depends(_svc)):
+    """Initiate password reset process by sending OTP."""
+    return svc.forgot_password(data.email)
+
+
+@router.post("/reset-password", status_code=status.HTTP_200_OK)
+def reset_password(data: ResetPasswordRequest, svc: AuthService = Depends(_svc)):
+    """Reset password using OTP verification."""
+    return svc.reset_password(data)
+

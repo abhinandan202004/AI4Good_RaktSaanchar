@@ -35,16 +35,17 @@ async def _publish(routing_key: str, payload: Dict[str, Any]) -> None:
         logger.warning("RabbitMQ publish failed (key=%s): %s", routing_key, exc)
 
 
+import threading
+
 def _fire(routing_key: str, payload: Dict[str, Any]) -> None:
-    """Fire-and-forget — schedules publish on the running event loop."""
-    try:
-        loop = asyncio.get_event_loop()
-        if loop.is_running():
-            asyncio.ensure_future(_publish(routing_key, payload))
-        else:
-            loop.run_until_complete(_publish(routing_key, payload))
-    except Exception as exc:
-        logger.warning("Event scheduling failed: %s", exc)
+    """Fire-and-forget — schedules publish in a background thread to avoid AnyIO event loop issues."""
+    def sync_run():
+        try:
+            asyncio.run(_publish(routing_key, payload))
+        except Exception as exc:
+            logger.warning("Event scheduling failed: %s", exc)
+    
+    threading.Thread(target=sync_run, daemon=True).start()
 
 
 def publish_blood_request_created(

@@ -68,3 +68,19 @@ class EmailService:
             f"The RaktSaanchar Team"
         )
         return cls.send_email(to, subject, body)
+
+    @classmethod
+    def send_reset_password_email(cls, to: str, full_name: str, otp_code: str) -> bool:
+        subject = "RaktSaanchar — Reset Your Password"
+        body = (
+            f"Hello {full_name},\n\n"
+            f"You requested to reset your RaktSaanchar password.\n"
+            f"Your password reset verification code is:\n\n"
+            f"    {otp_code}\n\n"
+            f"This code expires in 10 minutes.\n\n"
+            f"If you did not request this, please ignore this email.\n\n"
+            f"Best regards,\n"
+            f"The RaktSaanchar Team"
+        )
+        return cls.send_email(to, subject, body)
+

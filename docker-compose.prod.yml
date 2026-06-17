@@ -1,0 +1,102 @@
+# =============================================================================
+# RaktSaanchar — Production Docker Compose Overlay (Oracle Cloud 1GB RAM)
+# =============================================================================
+# Usage:
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+#
+# This file OVERRIDES parts of docker-compose.yml for production:
+#   - Frontend: Vite dev server → pre-built Nginx static bundle
+#   - Gateway:  nginx.conf → nginx.prod.conf (adds frontend upstream)
+#   - All services: restart: unless-stopped & mem_limit caps
+#   - Internal services: remove host-exposed ports (only port 80 is public)
+#   - RabbitMQ management UI: disabled in prod (security)
+# =============================================================================
+
+services:
+
+  # ── Frontend: replace Vite dev server with production Nginx build ──────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.prod
+      args:
+        VITE_API_BASE_URL: "http://${SERVER_IP}/api/v1"
+        VITE_WS_URL: "ws://${SERVER_IP}/api/v1/chat/ws"
+        VITE_NTFY_BASE_URL: "${NTFY_BASE_URL:-https://ntfy.sh}"
+        VITE_NTFY_TOPIC_PREFIX: "${NTFY_TOPIC_PREFIX:-raktsaanchar}"
+    image: raktsaanchar-frontend:prod
+    networks: [rakt-net]
+    restart: unless-stopped
+    ports: []          # Not exposed directly — gateway proxies to this
+    command: []        # Override dev npm command
+    volumes: []        # No source code mount in prod
+    environment: {}    # Env vars are baked in at build time via ARGs
+    mem_limit: 30m
+
+  # ── Gateway: use production nginx config that serves the frontend ──────────
+  gateway:
+    restart: unless-stopped
+    volumes:
+      - ./infra/nginx.prod.conf:/etc/nginx/nginx.conf:ro
+    mem_limit: 30m
+
+  # ── Database ───────────────────────────────────────────────────────────────
+  db:
+    restart: unless-stopped
+    ports: []          # Never expose DB port publicly
+    mem_limit: 180m
+
+  # ── Redis ──────────────────────────────────────────────────────────────────
+  redis:
+    restart: unless-stopped
+    ports: []
+    mem_limit: 50m
+
+  # ── RabbitMQ: disable management UI in production ─────────────────────────
+  rabbitmq:
+    restart: unless-stopped
+    ports:
+      - "5672:5672"    # AMQP — internal only (firewall blocks this externally)
+    # Port 15672 (management UI) intentionally NOT exposed
+    mem_limit: 150m
+
+  # ── ntfy: not exposed publicly (push notifications go via ntfy.sh) ─────────
+  ntfy:
+    restart: unless-stopped
+    ports: []
+    mem_limit: 30m
+
+  # ── Application Services ──────────────────────────────────────────────────
+  auth-service:
+    restart: unless-stopped
+    ports: []
+    mem_limit: 80m
+
+  core-service:
+    restart: unless-stopped
+    ports: []
+    mem_limit: 120m
+
+  # Background worker
+  notification-service:
+    restart: unless-stopped
+    ports: []
+    mem_limit: 70m
+
+  # WebSocket server
+  chat-service:
+    restart: unless-stopped
+    ports: []
+    mem_limit: 80m
+
+  # Inference service
+  ml-service:
+    restart: unless-stopped
+    ports: []
+    mem_limit: 150m
+
+  # Chatbot model API gateway
+  chatbot-service:
+    restart: unless-stopped
+    ports: []
+    mem_limit: 100m

@@ -53,11 +53,6 @@ app.include_router(transfusion_router, prefix=API_PREFIX)
 app.include_router(iron_overload_router, prefix=API_PREFIX)
 
 
-@app.on_event("startup")
-async def on_startup():
-    """Pre-load the ML model at startup to avoid cold-start latency."""
-    from app.modules.ml.service import _load_model
-    _load_model()
 
 
 @app.get("/")

@@ -60,11 +60,11 @@ export const ChatbotWidget: React.FC = () => {
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
-          className="h-14 w-14 rounded-full bg-rose-600 hover:bg-rose-500 text-white flex items-center justify-center shadow-lg shadow-rose-600/30 hover:scale-110 active:scale-95 transition-all duration-300 relative border border-rose-500/20"
+          className="h-14 w-14 rounded-full bg-brand-dark hover:bg-brand-dark/90 text-white dark:bg-brand-default dark:text-brand-dark flex items-center justify-center shadow-lg shadow-brand-dark/20 hover:scale-110 active:scale-95 transition-all duration-300 relative border border-brand-default/20"
           title="Open AI Assistant"
         >
-          {/* Pulsing red ring around the button */}
-          <span className="absolute -inset-1 rounded-full border-2 border-rose-500 animate-ping opacity-25"></span>
+          {/* Pulsing blue ring around the button */}
+          <span className="absolute -inset-1 rounded-full border-2 border-brand-default animate-ping opacity-25"></span>
           <svg
             className="w-7 h-7"
             fill="none"
@@ -84,21 +84,21 @@ export const ChatbotWidget: React.FC = () => {
 
       {/* Chatbot Overlay Panel */}
       {isOpen && (
-        <div className="w-80 md:w-96 h-[500px] glass-panel rounded-2xl flex flex-col shadow-2xl shadow-rose-950/20 border border-rose-500/20 animate-in slide-in-from-bottom-5 duration-300 overflow-hidden bg-rose-50/90 dark:bg-rose-950/30 backdrop-blur-md">
+        <div className="w-80 md:w-96 h-[500px] glass-panel flex flex-col shadow-2xl shadow-brand-dark/10 border border-brand-default/30 animate-in slide-in-from-bottom-5 duration-300 overflow-hidden bg-white/95 dark:bg-brand-darkBg/95 backdrop-blur-md">
           {/* Header */}
-          <div className="px-4 py-3 bg-gradient-to-r from-rose-600 to-rose-700 text-white flex items-center justify-between border-b border-rose-500/20">
+          <div className="px-4 py-3 bg-gradient-to-r from-brand-dark to-[#1A4B66] text-white flex items-center justify-between border-b border-brand-default/10">
             <div className="flex items-center gap-2.5">
               <div className="relative">
                 <div className="w-2.5 h-2.5 bg-green-400 rounded-full animate-pulse"></div>
               </div>
               <div>
-                <h3 className="font-bold text-sm leading-tight">AI Assistant</h3>
-                <span className="text-[10px] text-rose-100 font-medium">RaktaSanchaar Helper</span>
+                <h3 className="font-bold text-sm leading-tight text-white">AI Assistant</h3>
+                <span className="text-[10px] text-brand-light font-medium">RaktaSanchaar Helper</span>
               </div>
             </div>
             <button
               onClick={() => setIsOpen(false)}
-              className="text-rose-100 hover:text-white p-1 hover:bg-rose-500/30 rounded-lg transition-colors"
+              className="text-brand-light hover:text-white p-1 hover:bg-white/10 rounded-lg transition-colors"
             >
               <svg
                 className="w-5 h-5"
@@ -129,11 +129,11 @@ export const ChatbotWidget: React.FC = () => {
                 <div
                   className={`max-w-[85%] px-3.5 py-2.5 rounded-2xl text-xs leading-normal shadow-sm ${
                     msg.sender === 'user'
-                      ? 'bg-rose-600 text-white rounded-tr-none'
-                      : 'bg-white/80 dark:bg-slate-900/80 text-slate-800 dark:text-slate-100 border border-slate-200/50 dark:border-slate-800/50 rounded-tl-none'
+                      ? 'bg-brand-dark text-white rounded-tr-none dark:bg-brand-default dark:text-brand-dark'
+                      : 'bg-[#DDEFF7]/40 dark:bg-brand-dark/20 text-[#10354A] dark:text-slate-100 border border-brand-default/20 dark:border-brand-dark/30 rounded-tl-none'
                   }`}
                 >
-                  <p className="whitespace-pre-line">{msg.text}</p>
+                  <p className="whitespace-pre-line font-medium">{msg.text}</p>
                 </div>
               </div>
             ))}
@@ -141,7 +141,7 @@ export const ChatbotWidget: React.FC = () => {
             {/* Typing status bubble */}
             {isLoading && (
               <div className="flex justify-start">
-                <div className="bg-white/80 dark:bg-slate-900/80 px-4 py-3 rounded-2xl rounded-tl-none border border-slate-200/50 dark:border-slate-800/50 flex gap-1 items-center">
+                <div className="bg-[#DDEFF7]/40 dark:bg-brand-dark/20 px-4 py-3 rounded-2xl rounded-tl-none border border-brand-default/20 dark:border-brand-dark/30 flex gap-1 items-center">
                   <span className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce duration-1000"></span>
                   <span className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce duration-1000 delay-150"></span>
                   <span className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce duration-1000 delay-300"></span>
@@ -151,7 +151,7 @@ export const ChatbotWidget: React.FC = () => {
 
             {/* Error banner */}
             {error && (
-              <div className="p-3 bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 text-xs rounded-xl text-center">
+              <div className="p-3 bg-red-500/10 border border-red-500/20 text-red-650 dark:text-red-400 text-xs rounded-xl text-center font-bold">
                 {error}
               </div>
             )}
@@ -162,7 +162,7 @@ export const ChatbotWidget: React.FC = () => {
           {/* Form Input */}
           <form
             onSubmit={handleSend}
-            className="p-3 bg-white/40 dark:bg-slate-900/40 border-t border-rose-500/10 flex gap-2 items-center"
+            className="p-3 bg-slate-50/50 dark:bg-brand-darkCard/40 border-t border-brand-default/20 flex gap-2 items-center"
           >
             <input
               type="text"
@@ -170,12 +170,12 @@ export const ChatbotWidget: React.FC = () => {
               onChange={(e) => setMessage(e.target.value)}
               placeholder="Ask anything..."
               disabled={isLoading}
-              className="flex-1 px-3.5 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-rose-500 focus:border-rose-500 disabled:opacity-50 transition-all duration-300"
+              className="flex-1 px-3.5 py-2 text-xs rounded-xl border border-brand-default/35 dark:border-brand-dark/40 bg-white dark:bg-brand-darkBg text-brand-dark dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-brand-dark focus:border-brand-dark disabled:opacity-50 transition-all duration-300"
             />
             <button
               type="submit"
               disabled={isLoading || !message.trim()}
-              className="h-8 w-8 rounded-xl bg-rose-600 hover:bg-rose-500 text-white flex items-center justify-center disabled:opacity-40 transition-colors shadow-md shadow-rose-600/10"
+              className="h-8 w-8 rounded-xl bg-brand-dark hover:bg-brand-dark/90 text-white dark:bg-brand-default dark:text-brand-dark flex items-center justify-center disabled:opacity-40 transition-colors shadow-md shadow-brand-dark/10"
             >
               <svg
                 className="w-4 h-4 transform rotate-90"

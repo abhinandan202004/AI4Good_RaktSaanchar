@@ -45,7 +45,7 @@ def get_messages(
     messages = (
         db.query(ChatMessage)
         .filter(ChatMessage.room_id == room_id)
-        .order_by(ChatMessage.created_at)
+        .order_by(ChatMessage.created_at.desc())
         .offset(skip)
         .limit(limit)
         .all()

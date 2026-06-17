@@ -1,13 +1,13 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Bell, LogOut, Sun, Moon, Droplets, Code2, User as UserIcon } from 'lucide-react';
+import { Bell, LogOut, Sun, Moon, Droplet, Code2, User as UserIcon } from 'lucide-react';
 import api from '../services/api';
 import { Notification } from '../types';
 
 export const Navbar: React.FC = () => {
   const { user, logout } = useAuth();
   const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [theme, setTheme] = useState<string>(localStorage.getItem('theme') || 'emerald');
+  const [theme, setTheme] = useState<string>(localStorage.getItem('theme') || 'light');
   const [showNotifications, setShowNotifications] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
 
@@ -17,7 +17,7 @@ export const Navbar: React.FC = () => {
   // Sync theme with HTML attribute and Dark mode class
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
-    if (theme === 'night') {
+    if (theme === 'dark') {
       document.documentElement.classList.add('dark');
     } else {
       document.documentElement.classList.remove('dark');
@@ -67,15 +67,15 @@ export const Navbar: React.FC = () => {
   const unreadCount = notifications.filter(n => !n.is_read).length;
 
   const toggleTheme = () => {
-    setTheme(prev => (prev === 'emerald' ? 'night' : 'emerald'));
+    setTheme(prev => (prev === 'light' ? 'dark' : 'light'));
   };
 
   const getRoleBadgeStyle = (role: string) => {
     switch (role) {
-      case 'patient': return 'bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-300';
-      case 'donor': return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300';
-      case 'blood_bank': return 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300';
-      case 'coordinator': return 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300';
+      case 'patient': return 'bg-[#DDEFF7] text-[#10354A] dark:bg-[#192D3D] dark:text-[#C7E5F4]';
+      case 'donor': return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400';
+      case 'blood_bank': return 'bg-sky-100 text-sky-700 dark:bg-sky-950/30 dark:text-sky-450';
+      case 'coordinator': return 'bg-amber-100 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400';
       default: return 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300';
     }
   };
@@ -84,10 +84,10 @@ export const Navbar: React.FC = () => {
     <header className="glass-nav border-b sticky top-0 z-50 px-6 py-3.5 flex items-center justify-between">
       {/* Brand */}
       <div className="flex items-center gap-2.5">
-        <div className="p-2 bg-rose-500/10 dark:bg-rose-500/20 rounded-xl border border-rose-500/20">
-          <Droplets className="text-rose-500 w-5.5 h-5.5 animate-pulse" />
+        <div className="p-2 bg-brand-light dark:bg-brand-dark/30 rounded-xl border border-brand-default/40">
+          <Droplet className="text-brand-dark dark:text-brand-default w-5 h-5 animate-pulse fill-brand-default/30" />
         </div>
-        <span className="text-lg font-black tracking-tight text-slate-800 dark:text-slate-100">
+        <span className="text-lg font-black tracking-tight text-brand-dark dark:text-white">
           Rakta<span className="hero-highlight-token">Sanchaar</span>
         </span>
       </div>
@@ -99,7 +99,7 @@ export const Navbar: React.FC = () => {
           href="https://github.com/abhinandan202004/Rakt" 
           target="_blank" 
           rel="noopener noreferrer" 
-          className="flex items-center gap-1.5 px-3 py-1.5 border border-slate-200 dark:border-slate-800 hover:bg-slate-100/50 dark:hover:bg-slate-900/50 rounded-xl navbar-link-token"
+          className="flex items-center gap-1.5 px-3 py-1.5 border border-brand-default/30 dark:border-brand-dark/40 hover:bg-brand-light/30 dark:hover:bg-brand-dark/20 rounded-xl navbar-link-token"
         >
           <Code2 className="w-3.5 h-3.5" />
           <span className="hidden sm:inline">Source code</span>
@@ -108,10 +108,10 @@ export const Navbar: React.FC = () => {
         {/* Theme Toggle */}
         <button 
           onClick={toggleTheme} 
-          className="p-2 border border-slate-200 dark:border-slate-800 hover:bg-slate-100/50 dark:hover:bg-slate-900/50 rounded-xl transition-all text-slate-600 dark:text-slate-300"
+          className="p-2 border border-brand-default/30 dark:border-brand-dark/40 hover:bg-brand-light/30 dark:hover:bg-brand-dark/20 rounded-xl transition-all text-brand-dark dark:text-brand-default"
           title="Toggle Theme"
         >
-          {theme === 'emerald' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4 text-amber-400" />}
+          {theme === 'light' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4 text-amber-400" />}
         </button>
 
         {/* Notifications */}
@@ -119,23 +119,23 @@ export const Navbar: React.FC = () => {
           <div className="relative" ref={notifRef}>
             <button 
               onClick={() => setShowNotifications(!showNotifications)}
-              className="p-2 border border-slate-200 dark:border-slate-800 hover:bg-slate-100/50 dark:hover:bg-slate-900/50 rounded-xl transition-all text-slate-600 dark:text-slate-300 relative"
+              className="p-2 border border-brand-default/30 dark:border-brand-dark/40 hover:bg-brand-light/30 dark:hover:bg-brand-dark/20 rounded-xl transition-all text-brand-dark dark:text-brand-default relative"
               title="Notifications"
             >
               <Bell className="w-4 h-4" />
               {unreadCount > 0 && (
-                <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[9px] font-bold text-white animate-bounce">
+                <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-brand-accent text-[9px] font-bold text-white animate-bounce">
                   {unreadCount}
                 </span>
               )}
             </button>
 
             {showNotifications && (
-              <div className="absolute right-0 mt-3 w-80 glass-card p-4 z-50 border border-slate-200 dark:border-slate-800">
-                <div className="flex justify-between items-center border-b border-slate-200/50 dark:border-slate-800/50 pb-2 mb-2">
-                  <span className="font-bold text-sm text-slate-800 dark:text-slate-200">Notifications ({unreadCount})</span>
+              <div className="absolute right-0 mt-3 w-80 glass-card p-4 z-50 border border-brand-default/30 dark:border-brand-dark/40">
+                <div className="flex justify-between items-center border-b border-brand-default/30 dark:border-brand-dark/30 pb-2 mb-2">
+                  <span className="font-bold text-sm text-brand-dark dark:text-slate-200">Notifications ({unreadCount})</span>
                   {unreadCount > 0 && (
-                    <button onClick={markAllAsRead} className="text-xs text-rose-500 hover:underline font-semibold">
+                    <button onClick={markAllAsRead} className="text-xs text-brand-accent hover:underline font-semibold">
                       Mark all read
                     </button>
                   )}
@@ -152,13 +152,13 @@ export const Navbar: React.FC = () => {
                         className={`p-2.5 rounded-xl border text-xs transition-all ${
                           notif.is_read
                             ? 'bg-slate-50/50 dark:bg-slate-900/30 border-slate-150 dark:border-slate-800/40 opacity-60'
-                            : 'bg-rose-500/5 border-rose-500/15 dark:bg-rose-500/10 dark:border-rose-500/20 font-semibold'
+                            : 'bg-brand-light/20 border-brand-default/40 dark:bg-brand-dark/30 dark:border-brand-dark/50 font-semibold'
                         }`}
                       >
-                        <div className="text-[9px] text-rose-500 font-bold mb-0.5 uppercase tracking-wide">
+                        <div className="text-[9px] text-[#2C5E7A] dark:text-brand-default font-bold mb-0.5 uppercase tracking-wide">
                           {notif.type}
                         </div>
-                        <div className="text-slate-800 dark:text-slate-100 leading-snug font-bold">{notif.title}</div>
+                        <div className="text-brand-dark dark:text-slate-100 leading-snug font-bold">{notif.title}</div>
                         <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 font-medium">{notif.body}</div>
                       </div>
                     ))
@@ -171,9 +171,9 @@ export const Navbar: React.FC = () => {
 
         {/* User Dropdown */}
         {user && (
-          <div className="relative flex items-center gap-3 pl-3 border-l border-slate-200 dark:border-slate-800" ref={userRef}>
+          <div className="relative flex items-center gap-3 pl-3 border-l border-brand-default/30 dark:border-brand-dark/40" ref={userRef}>
             <div className="hidden md:flex flex-col text-right leading-none gap-0.5">
-              <span className="text-xs font-bold text-slate-700 dark:text-slate-300">{user.full_name}</span>
+              <span className="text-xs font-bold text-brand-dark dark:text-slate-350">{user.full_name}</span>
               <span className="text-[9px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">
                 {user.role.replace('_', ' ')}
               </span>
@@ -181,15 +181,15 @@ export const Navbar: React.FC = () => {
             
             <button 
               onClick={() => setShowUserMenu(!showUserMenu)}
-              className="flex items-center justify-center w-8.5 h-8.5 bg-rose-500/10 text-rose-500 hover:bg-rose-500/20 border border-rose-500/15 rounded-xl font-bold uppercase text-sm"
+              className="flex items-center justify-center w-8.5 h-8.5 bg-brand-light text-brand-dark hover:bg-brand-default dark:bg-brand-dark dark:text-brand-light dark:hover:bg-brand-dark/80 border border-brand-default/30 dark:border-brand-dark/40 rounded-xl font-bold uppercase text-sm"
             >
               <span>{user.full_name[0]}</span>
             </button>
 
             {showUserMenu && (
-              <div className="absolute right-0 top-10 mt-3 w-52 glass-card p-2 z-50 border border-slate-200 dark:border-slate-800">
-                <div className="px-3 py-2 border-b border-slate-200/50 dark:border-slate-800/50 mb-1.5">
-                  <div className="font-bold text-xs text-slate-800 dark:text-slate-200 truncate">{user.full_name}</div>
+              <div className="absolute right-0 top-10 mt-3 w-52 glass-card p-2 z-50 border border-brand-default/30 dark:border-brand-dark/40">
+                <div className="px-3 py-2 border-b border-brand-default/20 dark:border-brand-dark/20 mb-1.5">
+                  <div className="font-bold text-xs text-brand-dark dark:text-slate-200 truncate">{user.full_name}</div>
                   <div className="text-[10px] text-slate-400 dark:text-slate-500 truncate mt-0.5">{user.email}</div>
                   <span className={`inline-block mt-1.5 px-1.5 py-0.5 rounded-md text-[8px] font-bold uppercase ${getRoleBadgeStyle(user.role)}`}>
                     {user.role}
@@ -197,7 +197,7 @@ export const Navbar: React.FC = () => {
                 </div>
                 <button 
                   onClick={logout} 
-                  className="w-full flex items-center gap-2 px-3 py-2 text-xs font-bold text-rose-500 hover:bg-rose-500/5 rounded-xl transition-all"
+                  className="w-full flex items-center gap-2 px-3 py-2 text-xs font-bold text-brand-accent hover:bg-brand-accent/10 rounded-xl transition-all"
                 >
                   <LogOut className="w-3.5 h-3.5" />
                   Logout
