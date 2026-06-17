@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { Lock, Mail, User as UserIcon, MapPin, Sparkles, LogIn, CheckCircle2, Phone } from 'lucide-react';
+import { Lock, Mail, User as UserIcon, MapPin, Sparkles, LogIn, CheckCircle2, Phone, Droplet } from 'lucide-react';
 import api from '../services/api';
 
 export const LoginRegister: React.FC = () => {
@@ -30,6 +30,12 @@ export const LoginRegister: React.FC = () => {
   const [showVerification, setShowVerification] = useState(false);
   const [verificationCode, setVerificationCode] = useState('');
   const [phone, setPhone] = useState('');
+
+  // Password Reset state
+  const [isForgotPassword, setIsForgotPassword] = useState(false);
+  const [showForgotPasswordOtp, setShowForgotPasswordOtp] = useState(false);
+  const [resetPassword, setResetPassword] = useState('');
+  const [resetOtp, setResetOtp] = useState('');
 
   // Request browser location
   const detectLocation = () => {
@@ -76,7 +82,10 @@ export const LoginRegister: React.FC = () => {
       } else {
         // Login Flow
         const loginResp = await api.post('/auth/login', { email, password });
-        const { access_token, user: loggedUser } = loginResp.data;
+        const { access_token } = loginResp.data;
+        localStorage.setItem('token', access_token);
+        const meResp = await api.get('/auth/me');
+        const loggedUser = meResp.data;
         await login(access_token, loggedUser);
         setSuccess('Logged in successfully!');
         setTimeout(() => navigate(getDashboardRoute(loggedUser.role)), 1000);
@@ -101,10 +110,12 @@ export const LoginRegister: React.FC = () => {
 
       // 2. Login User
       const loginResp = await api.post('/auth/login', { email, password });
-      const { access_token, user: loggedUser } = loginResp.data;
+      const { access_token } = loginResp.data;
       
       // Save token immediately in local storage before creating profiles
       localStorage.setItem('token', access_token);
+      const meResp = await api.get('/auth/me');
+      const loggedUser = meResp.data;
 
       // 3. Create role-specific profiles
       if (role === 'patient') {
@@ -156,6 +167,45 @@ export const LoginRegister: React.FC = () => {
       setSuccess('A new verification code has been sent to your email!');
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Failed to resend code. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleForgotPasswordRequest = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setSuccess('');
+    setLoading(true);
+    try {
+      await api.post('/auth/forgot-password', { email });
+      setSuccess('Verification OTP sent to your email!');
+      setShowForgotPasswordOtp(true);
+    } catch (err: any) {
+      setError(err.response?.data?.detail || 'Failed to send reset code. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setSuccess('');
+    setLoading(true);
+    try {
+      await api.post('/auth/reset-password', {
+        email,
+        code: resetOtp,
+        new_password: resetPassword,
+      });
+      setSuccess('Password updated successfully! You can now log in.');
+      setIsForgotPassword(false);
+      setShowForgotPasswordOtp(false);
+      setResetPassword('');
+      setResetOtp('');
+    } catch (err: any) {
+      setError(err.response?.data?.detail || 'Password reset failed. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -274,7 +324,9 @@ export const LoginRegister: React.FC = () => {
           password: pass
         });
         loginToken = loginResp.data.access_token;
-        loggedUser = loginResp.data.user;
+        localStorage.setItem('token', loginToken);
+        const meResp = await api.get('/auth/me');
+        loggedUser = meResp.data;
       } catch {
         // If login fails, register first
         await api.post('/auth/register', {
@@ -294,7 +346,9 @@ export const LoginRegister: React.FC = () => {
           password: pass
         });
         loginToken = loginResp.data.access_token;
-        loggedUser = loginResp.data.user;
+        localStorage.setItem('token', loginToken);
+        const meResp = await api.get('/auth/me');
+        loggedUser = meResp.data;
 
         // Save token in config headers for sub-requests
         localStorage.setItem('token', loginToken);
@@ -320,60 +374,108 @@ export const LoginRegister: React.FC = () => {
   };
 
   return (
-    <div className="min-h-[calc(100vh-60px)] flex items-center justify-center p-6 relative">
-      
-      <div className="max-w-6xl w-full grid grid-cols-1 md:grid-cols-12 gap-10 items-center">
+    <div className="min-h-[calc(100vh-140px)] flex items-center justify-center p-6 relative">
+      <div className="max-w-6xl w-full grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
         
-        {/* Hero Section */}
-        <div className="md:col-span-6 flex flex-col justify-center pr-6 py-8 md:sticky md:top-8 gap-5 animate-fade-in">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-rose-500/10 dark:bg-rose-500/20 rounded-full text-xs font-black text-rose-500 uppercase tracking-widest w-fit border border-rose-500/10">
-            <Sparkles className="w-3.5 h-3.5 animate-pulse" />
-            AI-Driven Blood Network
-          </div>
-          <h1 className="hero-heading-token">
-            Next-gen dispatch, powered by <span className="hero-highlight-token">RaktSaanchar</span>
-          </h1>
-          <p className="hero-subtitle-token">
-            A decentralized, real-time coordination platform connecting patients, donors, and blood banks. Powered by predictive XGBoost donor-ranking and automated Amazon SNS alerts.
-          </p>
+        {/* Left Mobile App Splash Reference Mockup */}
+        <div className="lg:col-span-6 flex flex-col justify-center items-center py-6 px-4">
+          <div className="w-[320px] h-[640px] rounded-[48px] border-[10px] border-[#10354A] dark:border-brand-dark/80 bg-gradient-to-b from-[#DDEFF7] to-[#ffffff] dark:from-[#0C141C] dark:to-[#131E29] shadow-2xl relative overflow-hidden flex flex-col justify-between p-6">
+            
+            {/* Status Bar */}
+            <div className="flex justify-between items-center text-[10px] font-bold text-brand-dark dark:text-slate-400">
+              <span>09:41</span>
+              <div className="flex gap-1.5 items-center">
+                <span>5G</span>
+                <div className="w-4.5 h-2.5 border border-brand-dark dark:border-slate-400 rounded-sm p-0.5 flex items-center">
+                  <div className="w-3 h-full bg-brand-dark dark:bg-slate-400 rounded-2xs"></div>
+                </div>
+              </div>
+            </div>
 
-          {/* Quick Platform Stats */}
-          <div className="grid grid-cols-3 gap-4 mt-4">
-            <div className="glass-card p-4 border border-rose-500/10 bg-white/20 dark:bg-slate-900/10">
-              <span className="block text-2xl font-black text-rose-500">98%</span>
-              <span className="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 tracking-wider">Match Rate</span>
+            {/* Hand & Connection Illustration Mockup */}
+            <div className="flex-1 flex flex-col justify-center items-center relative my-4">
+              <div className="text-center">
+                <span className="text-3xl font-black tracking-tight text-brand-dark dark:text-white flex items-center justify-center gap-1.5">
+                  <Droplet className="text-[#FF5E5E] fill-[#FF5E5E]/20 w-8 h-8 animate-pulse" />
+                  rakt
+                </span>
+                <span className="text-[10px] tracking-widest text-[#2C5E7A] dark:text-brand-default uppercase font-extrabold mt-0.5 block">
+                  saanchar
+                </span>
+              </div>
+              
+              {/* Central Circle connectors */}
+              <div className="mt-8 relative w-40 h-40 flex items-center justify-center">
+                <div className="absolute w-36 h-36 rounded-full border border-brand-default/50 dark:border-brand-dark/30 animate-pulse"></div>
+                <div className="absolute w-24 h-24 rounded-full bg-brand-light/40 dark:bg-brand-dark/20 flex items-center justify-center">
+                  <div className="w-14 h-14 rounded-full bg-white dark:bg-brand-darkCard shadow-md flex items-center justify-center">
+                    <HeartIcon className="w-7 h-7 text-[#FF5E5E] fill-[#FF5E5E]" />
+                  </div>
+                </div>
+                {/* Simulated connection line */}
+                <div className="absolute h-0.5 bg-[#FF5E5E]/40 w-44 rotate-30 animate-pulse"></div>
+              </div>
             </div>
-            <div className="glass-card p-4 border border-rose-500/10 bg-white/20 dark:bg-slate-900/10">
-              <span className="block text-2xl font-black text-rose-500">&lt;10m</span>
-              <span className="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 tracking-wider">Response Time</span>
-            </div>
-            <div className="glass-card p-4 border border-rose-500/10 bg-white/20 dark:bg-slate-900/10">
-              <span className="block text-2xl font-black text-rose-500">20+</span>
-              <span className="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 tracking-wider">Blood Banks</span>
+
+            {/* Bottom Card Mockup */}
+            <div className="bg-white dark:bg-[#1C2836] p-4.5 rounded-[24px] shadow-lg border border-brand-default/30 dark:border-brand-dark/40 flex flex-col gap-3.5">
+              <div className="flex gap-1">
+                <div className="h-1 w-8 bg-[#10354A] dark:bg-brand-default rounded-full"></div>
+                <div className="h-1 w-4 bg-brand-default/40 rounded-full"></div>
+                <div className="h-1 w-2 bg-brand-default/40 rounded-full"></div>
+              </div>
+
+              <div>
+                <h3 className="font-extrabold text-sm text-brand-dark dark:text-white">Welcome to RaktaSanchaar 👋</h3>
+                <p className="text-[10px] text-slate-400 dark:text-slate-500 font-bold mt-1 leading-normal">
+                  Your ultimate digital partner to request, rank, and search for compatible blood donors in real time.
+                </p>
+              </div>
+
+              <div className="flex flex-col gap-2 mt-1">
+                <button
+                  onClick={() => {
+                    setIsRegister(false);
+                    setShowVerification(false);
+                  }}
+                  className="w-full bg-[#DDEFF7] hover:bg-[#C7E5F4] text-[#10354A] font-bold py-2 rounded-xl text-[10px] uppercase tracking-wider transition-all"
+                >
+                  Login
+                </button>
+                <button
+                  onClick={() => {
+                    setIsRegister(true);
+                    setShowVerification(false);
+                  }}
+                  className="w-full bg-[#10354A] hover:bg-[#192D3D] text-white font-bold py-2 rounded-xl text-[10px] uppercase tracking-wider transition-all"
+                >
+                  Create account
+                </button>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Right Stacked Column */}
-        <div className="md:col-span-6 flex flex-col gap-6">
+        {/* Right Stacked Column for Interactive Authentication Forms */}
+        <div className="lg:col-span-6 flex flex-col gap-6 w-full">
           
           {/* Main Authentication Card */}
-          <div className="glass-panel border border-slate-200/50 dark:border-slate-800/40 p-8">
-            <h2 className="text-2xl font-black text-slate-800 dark:text-slate-100 flex items-center gap-2">
-              <Sparkles className="text-rose-500 w-6 h-6 animate-pulse" />
-              {isRegister ? 'Create Account' : 'Welcome Back'}
+          <div className="glass-panel border border-brand-default/30 dark:border-brand-dark/40 p-8 shadow-md">
+            <h2 className="text-2xl font-black text-brand-dark dark:text-slate-100 flex items-center gap-2">
+              <Sparkles className="text-brand-dark dark:text-brand-default w-6 h-6 animate-pulse" />
+              {isForgotPassword ? 'Reset Password' : (isRegister ? 'Create Account' : 'Welcome Back')}
             </h2>
             <p className="text-xs text-slate-400 dark:text-slate-500 font-bold mb-6 mt-1">
-              {isRegister ? 'Join our life-saving donation network' : 'Log in to manage and accept blood requests'}
+              {isForgotPassword ? 'Reset your account password via email verification' : (isRegister ? 'Join our life-saving donation network' : 'Log in to manage and accept blood requests')}
             </p>
 
             {error && (
-              <div className="bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 text-xs p-3 rounded-xl font-bold mb-4">
+              <div className="bg-red-500/10 border border-red-500/20 text-[#FF5E5E] text-xs p-3 rounded-xl font-bold mb-4">
                 <span>{error}</span>
               </div>
             )}
             {success && (
-              <div className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs p-3 rounded-xl font-bold mb-4 flex items-center gap-2">
+              <div className="bg-emerald-550/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs p-3 rounded-xl font-bold mb-4 flex items-center gap-2">
                 <CheckCircle2 className="w-4.5 h-4.5" />
                 <span>{success}</span>
               </div>
@@ -382,16 +484,16 @@ export const LoginRegister: React.FC = () => {
             {showVerification ? (
               <form onSubmit={handleVerify} className="flex flex-col gap-4">
                 <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-[#2C5E7A] dark:text-[#C7E5F4] mb-1.5">
                     Enter 6-Digit Verification Code
                   </label>
                   <div className="relative">
-                    <CheckCircle2 className="absolute left-3.5 top-3 text-slate-400 w-4.5 h-4.5" />
+                    <CheckCircle2 className="absolute left-3.5 top-3 text-[#2C5E7A] w-4.5 h-4.5" />
                     <input
                       type="text"
                       maxLength={6}
                       placeholder="XXXXXX"
-                      className="w-full bg-white/40 dark:bg-slate-900/30 border border-slate-200 dark:border-slate-800 focus:border-rose-500 dark:focus:border-rose-500 focus:ring-1 focus:ring-rose-500 outline-none rounded-xl pl-11 pr-3 py-2 text-sm transition-all text-slate-800 dark:text-slate-100 font-mono tracking-widest text-center"
+                      className="w-full bg-white dark:bg-brand-darkBg border border-brand-default/40 dark:border-brand-dark/50 focus:border-brand-dark focus:ring-1 focus:ring-brand-dark outline-none rounded-xl pl-11 pr-3 py-2 text-sm transition-all text-brand-dark dark:text-slate-100 font-mono tracking-widest text-center"
                       value={verificationCode}
                       onChange={(e) => setVerificationCode(e.target.value)}
                       required
@@ -404,7 +506,7 @@ export const LoginRegister: React.FC = () => {
 
                 <button 
                   type="submit" 
-                  className="w-full bg-rose-500 hover:bg-rose-600 text-white font-bold py-2.5 px-4 rounded-xl shadow-md transition-all text-xs uppercase tracking-wider mt-2 flex items-center justify-center gap-1.5" 
+                  className="w-full btn-pill-primary text-xs uppercase tracking-wider mt-2" 
                   disabled={loading}
                 >
                   {loading && <div className="animate-spin rounded-full h-3.5 w-3.5 border-2 border-white/20 border-t-white"></div>}
@@ -425,7 +527,7 @@ export const LoginRegister: React.FC = () => {
 
                   <button
                     type="button"
-                    className="text-xs font-bold text-rose-500 hover:underline disabled:opacity-50"
+                    className="text-xs font-bold text-brand-dark dark:text-brand-default hover:underline disabled:opacity-50"
                     onClick={handleResendOtp}
                     disabled={loading}
                   >
@@ -433,19 +535,121 @@ export const LoginRegister: React.FC = () => {
                   </button>
                 </div>
               </form>
+            ) : isForgotPassword ? (
+              showForgotPasswordOtp ? (
+                // Step 2: Verification code & Reset new password
+                <form onSubmit={handleResetPassword} className="flex flex-col gap-4">
+                  <div>
+                    <label className="block text-[10px] font-bold uppercase tracking-wider text-[#2C5E7A] dark:text-[#C7E5F4] mb-1.5">
+                      Reset Verification OTP
+                    </label>
+                    <div className="relative">
+                      <CheckCircle2 className="absolute left-3.5 top-3 text-[#2C5E7A] w-4.5 h-4.5" />
+                      <input
+                        type="text"
+                        maxLength={6}
+                        placeholder="XXXXXX"
+                        className="w-full bg-white dark:bg-brand-darkBg border border-brand-default/40 dark:border-brand-dark/50 focus:border-brand-dark focus:ring-1 focus:ring-brand-dark outline-none rounded-xl pl-11 pr-3 py-2 text-sm transition-all text-brand-dark dark:text-slate-100 font-mono tracking-widest text-center"
+                        value={resetOtp}
+                        onChange={(e) => setResetOtp(e.target.value)}
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-bold uppercase tracking-wider text-[#2C5E7A] dark:text-[#C7E5F4] mb-1.5">
+                      New Password
+                    </label>
+                    <div className="relative">
+                      <Lock className="absolute left-3.5 top-3 text-[#2C5E7A] w-4.5 h-4.5" />
+                      <input
+                        type="password"
+                        placeholder="••••••••"
+                        className="w-full bg-white dark:bg-brand-darkBg border border-brand-default/40 dark:border-brand-dark/50 focus:border-brand-dark focus:ring-1 focus:ring-brand-dark outline-none rounded-xl pl-11 pr-3 py-2 text-sm transition-all text-brand-dark dark:text-slate-100"
+                        value={resetPassword}
+                        onChange={(e) => setResetPassword(e.target.value)}
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="w-full btn-pill-primary text-xs uppercase tracking-wider mt-2"
+                    disabled={loading}
+                  >
+                    {loading && <div className="animate-spin rounded-full h-3.5 w-3.5 border-2 border-white/20 border-t-white"></div>}
+                    Update Password
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowForgotPasswordOtp(false);
+                      setError('');
+                      setSuccess('');
+                    }}
+                    className="text-xs font-semibold text-brand-dark dark:text-brand-default hover:underline text-center mt-2"
+                  >
+                    Back
+                  </button>
+                </form>
+              ) : (
+                // Step 1: Request OTP for password reset
+                <form onSubmit={handleForgotPasswordRequest} className="flex flex-col gap-4">
+                  <div>
+                    <label className="block text-[10px] font-bold uppercase tracking-wider text-[#2C5E7A] dark:text-[#C7E5F4] mb-1.5">
+                      Email Address
+                    </label>
+                    <div className="relative">
+                      <Mail className="absolute left-3.5 top-3 text-[#2C5E7A] w-4.5 h-4.5" />
+                      <input
+                        type="email"
+                        placeholder="email@example.com"
+                        className="w-full bg-white dark:bg-brand-darkBg border border-brand-default/40 dark:border-brand-dark/50 focus:border-brand-dark focus:ring-1 focus:ring-brand-dark outline-none rounded-xl pl-11 pr-3 py-2 text-sm transition-all text-brand-dark dark:text-slate-100"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="w-full btn-pill-primary text-xs uppercase tracking-wider mt-2"
+                    disabled={loading}
+                  >
+                    {loading && <div className="animate-spin rounded-full h-3.5 w-3.5 border-2 border-white/20 border-t-white"></div>}
+                    Send Verification Code
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsForgotPassword(false);
+                      setError('');
+                      setSuccess('');
+                    }}
+                    className="text-xs font-semibold text-brand-dark dark:text-brand-default hover:underline text-center mt-2"
+                  >
+                    Back to Log In
+                  </button>
+                </form>
+              )
             ) : (
               <form onSubmit={handleAuth} className="flex flex-col gap-4">
                 {isRegister && (
                   <div>
-                    <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
+                    <label className="block text-[10px] font-bold uppercase tracking-wider text-[#2C5E7A] dark:text-[#C7E5F4] mb-1.5">
                       Full Name
                     </label>
                     <div className="relative">
-                      <UserIcon className="absolute left-3.5 top-3 text-slate-400 w-4.5 h-4.5" />
+                      <UserIcon className="absolute left-3.5 top-3 text-[#2C5E7A] w-4.5 h-4.5" />
                       <input
                         type="text"
                         placeholder="Jane Doe"
-                        className="w-full bg-white/40 dark:bg-slate-900/30 border border-slate-200 dark:border-slate-800 focus:border-rose-500 dark:focus:border-rose-500 focus:ring-1 focus:ring-rose-500 outline-none rounded-xl pl-11 pr-3 py-2 text-sm transition-all text-slate-800 dark:text-slate-100"
+                        className="w-full bg-white dark:bg-brand-darkBg border border-brand-default/40 dark:border-brand-dark/50 focus:border-brand-dark focus:ring-1 focus:ring-brand-dark outline-none rounded-xl pl-11 pr-3 py-2 text-sm transition-all text-brand-dark dark:text-slate-100"
                         value={fullName}
                         onChange={(e) => setFullName(e.target.value)}
                         required={isRegister}
@@ -455,15 +659,15 @@ export const LoginRegister: React.FC = () => {
                 )}
 
                 <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-[#2C5E7A] dark:text-[#C7E5F4] mb-1.5">
                     Email Address
                   </label>
                   <div className="relative">
-                    <Mail className="absolute left-3.5 top-3 text-slate-400 w-4.5 h-4.5" />
+                    <Mail className="absolute left-3.5 top-3 text-[#2C5E7A] w-4.5 h-4.5" />
                     <input
                       type="email"
                       placeholder="email@example.com"
-                      className="w-full bg-white/40 dark:bg-slate-900/30 border border-slate-200 dark:border-slate-800 focus:border-rose-500 dark:focus:border-rose-500 focus:ring-1 focus:ring-rose-500 outline-none rounded-xl pl-11 pr-3 py-2 text-sm transition-all text-slate-800 dark:text-slate-100"
+                      className="w-full bg-white dark:bg-brand-darkBg border border-brand-default/40 dark:border-brand-dark/50 focus:border-brand-dark focus:ring-1 focus:ring-brand-dark outline-none rounded-xl pl-11 pr-3 py-2 text-sm transition-all text-brand-dark dark:text-slate-100"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       required
@@ -473,48 +677,62 @@ export const LoginRegister: React.FC = () => {
 
                 {isRegister && (
                   <div>
-                    <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
+                    <label className="block text-[10px] font-bold uppercase tracking-wider text-[#2C5E7A] dark:text-[#C7E5F4] mb-1.5">
                       Phone Number (Optional)
                     </label>
                     <div className="relative">
-                      <Phone className="absolute left-3.5 top-3 text-slate-400 w-4.5 h-4.5" />
+                      <Phone className="absolute left-3.5 top-3 text-[#2C5E7A] w-4.5 h-4.5" />
                       <input
                         type="tel"
                         placeholder="+919876543210 (Optional)"
-                        className="w-full bg-white/40 dark:bg-slate-900/30 border border-slate-200 dark:border-slate-800 focus:border-rose-500 dark:focus:border-rose-500 focus:ring-1 focus:ring-rose-500 outline-none rounded-xl pl-11 pr-3 py-2 text-sm transition-all text-slate-800 dark:text-slate-100"
+                        className="w-full bg-white dark:bg-brand-darkBg border border-brand-default/40 dark:border-brand-dark/50 focus:border-brand-dark focus:ring-1 focus:ring-brand-dark outline-none rounded-xl pl-11 pr-3 py-2 text-sm transition-all text-brand-dark dark:text-slate-100"
                         value={phone}
                         onChange={(e) => setPhone(e.target.value)}
-                        required={false}
                       />
                     </div>
                   </div>
                 )}
 
                 <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-[#2C5E7A] dark:text-[#C7E5F4] mb-1.5">
                     Password
                   </label>
                   <div className="relative">
-                    <Lock className="absolute left-3.5 top-3 text-slate-400 w-4.5 h-4.5" />
+                    <Lock className="absolute left-3.5 top-3 text-[#2C5E7A] w-4.5 h-4.5" />
                     <input
                       type="password"
                       placeholder="••••••••"
-                      className="w-full bg-white/40 dark:bg-slate-900/30 border border-slate-200 dark:border-slate-800 focus:border-rose-500 dark:focus:border-rose-500 focus:ring-1 focus:ring-rose-500 outline-none rounded-xl pl-11 pr-3 py-2 text-sm transition-all text-slate-800 dark:text-slate-100"
+                      className="w-full bg-white dark:bg-brand-darkBg border border-brand-default/40 dark:border-brand-dark/50 focus:border-brand-dark focus:ring-1 focus:ring-brand-dark outline-none rounded-xl pl-11 pr-3 py-2 text-sm transition-all text-brand-dark dark:text-slate-100"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       required
                     />
                   </div>
+                  {!isRegister && (
+                    <div className="flex justify-end mt-1.5">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsForgotPassword(true);
+                          setError('');
+                          setSuccess('');
+                        }}
+                        className="text-xs font-semibold text-[#2C5E7A] dark:text-[#C7E5F4] hover:underline"
+                      >
+                        Forgot Password?
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 {isRegister && (
                   <>
                     <div>
-                      <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
+                      <label className="block text-[10px] font-bold uppercase tracking-wider text-[#2C5E7A] dark:text-[#C7E5F4] mb-1.5">
                         Choose Role
                       </label>
                       <select
-                        className="w-full bg-white/40 dark:bg-slate-900/30 border border-slate-200 dark:border-slate-800 focus:border-rose-500 dark:focus:border-rose-500 focus:ring-1 focus:ring-rose-500 outline-none rounded-xl px-3 py-2.5 text-xs font-semibold text-slate-800 dark:text-slate-100"
+                        className="w-full bg-white dark:bg-brand-darkBg border border-brand-default/40 dark:border-brand-dark/50 focus:border-brand-dark focus:ring-1 focus:ring-brand-dark outline-none rounded-xl px-3 py-2.5 text-xs font-semibold text-brand-dark dark:text-slate-100"
                         value={role}
                         onChange={(e: any) => setRole(e.target.value)}
                       >
@@ -527,11 +745,11 @@ export const LoginRegister: React.FC = () => {
 
                     {(role === 'patient' || role === 'donor') && (
                       <div>
-                        <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
-                          Blood Group <span className="text-rose-500">*</span>
+                        <label className="block text-[10px] font-bold uppercase tracking-wider text-[#2C5E7A] dark:text-[#C7E5F4] mb-1.5">
+                          Blood Group <span className="text-[#FF5E5E]">*</span>
                         </label>
                         <select
-                          className="w-full bg-white/40 dark:bg-slate-900/30 border border-slate-200 dark:border-slate-800 focus:border-rose-500 dark:focus:border-rose-500 focus:ring-1 focus:ring-rose-500 outline-none rounded-xl px-3 py-2.5 text-xs font-semibold text-slate-800 dark:text-slate-100"
+                          className="w-full bg-white dark:bg-brand-darkBg border border-brand-default/40 dark:border-brand-dark/50 focus:border-brand-dark focus:ring-1 focus:ring-brand-dark outline-none rounded-xl px-3 py-2.5 text-xs font-semibold text-brand-dark dark:text-slate-100"
                           value={bloodGroup}
                           onChange={(e) => setBloodGroup(e.target.value)}
                           required
@@ -550,15 +768,15 @@ export const LoginRegister: React.FC = () => {
                     )}
 
                     {role !== 'coordinator' && (
-                      <div className="border border-slate-200/40 dark:border-slate-800/40 p-4.5 rounded-2xl bg-slate-100/30 dark:bg-slate-900/20">
+                      <div className="border border-brand-default/40 dark:border-brand-dark/50 p-4.5 rounded-2xl bg-brand-light/20 dark:bg-brand-dark/10">
                         <div className="flex justify-between items-center mb-3">
-                          <span className="text-xs font-extrabold flex items-center gap-1.5 text-slate-700 dark:text-slate-350">
-                            <MapPin className="text-rose-500 w-4 h-4" />
+                          <span className="text-xs font-extrabold flex items-center gap-1.5 text-brand-dark dark:text-slate-350">
+                            <MapPin className="text-[#FF5E5E] w-4 h-4" />
                             Geolocation Coordinates
                           </span>
                           <button
                             type="button"
-                            className="px-3 py-1 bg-rose-500 hover:bg-rose-600 text-white rounded-lg text-[10px] font-bold uppercase transition-all"
+                            className="px-3 py-1 bg-brand-dark hover:bg-brand-dark/90 text-white dark:bg-brand-default dark:text-brand-dark rounded-lg text-[10px] font-bold uppercase transition-all"
                             onClick={detectLocation}
                             disabled={gettingLocation}
                           >
@@ -566,7 +784,7 @@ export const LoginRegister: React.FC = () => {
                           </button>
                         </div>
 
-                        {locationError && <p className="text-[10px] text-rose-500 font-bold mb-2">{locationError}</p>}
+                        {locationError && <p className="text-[10px] text-[#FF5E5E] font-bold mb-2">{locationError}</p>}
 
                         <div className="grid grid-cols-2 gap-3">
                           <div>
@@ -574,7 +792,7 @@ export const LoginRegister: React.FC = () => {
                               type="number"
                               step="any"
                               placeholder="Latitude"
-                              className="w-full bg-white/45 dark:bg-slate-900/35 border border-slate-200/50 dark:border-slate-800/55 focus:border-rose-500 dark:focus:border-rose-500 focus:ring-1 focus:ring-rose-500 outline-none rounded-lg px-2.5 py-1.5 text-xs text-slate-800 dark:text-slate-100"
+                              className="w-full bg-white dark:bg-brand-darkBg border border-brand-default/40 dark:border-brand-dark/55 focus:border-brand-dark focus:ring-1 focus:ring-brand-dark outline-none rounded-lg px-2.5 py-1.5 text-xs text-brand-dark dark:text-slate-100"
                               value={latitude || ''}
                               onChange={(e) => setLatitude(parseFloat(e.target.value))}
                               required
@@ -585,7 +803,7 @@ export const LoginRegister: React.FC = () => {
                               type="number"
                               step="any"
                               placeholder="Longitude"
-                              className="w-full bg-white/45 dark:bg-slate-900/35 border border-slate-200/50 dark:border-slate-800/55 focus:border-rose-500 dark:focus:border-rose-500 focus:ring-1 focus:ring-rose-500 outline-none rounded-lg px-2.5 py-1.5 text-xs text-slate-800 dark:text-slate-100"
+                              className="w-full bg-white dark:bg-brand-darkBg border border-brand-default/40 dark:border-brand-dark/55 focus:border-brand-dark focus:ring-1 focus:ring-brand-dark outline-none rounded-lg px-2.5 py-1.5 text-xs text-brand-dark dark:text-slate-100"
                               value={longitude || ''}
                               onChange={(e) => setLongitude(parseFloat(e.target.value))}
                               required
@@ -599,7 +817,7 @@ export const LoginRegister: React.FC = () => {
 
                 <button 
                   type="submit" 
-                  className="w-full bg-rose-500 hover:bg-rose-600 text-white font-bold py-2.5 px-4 rounded-xl shadow-md transition-all text-xs uppercase tracking-wider mt-2 flex items-center justify-center gap-1.5" 
+                  className="w-full btn-pill-primary text-xs uppercase tracking-wider mt-2" 
                   disabled={loading}
                 >
                   {loading && <div className="animate-spin rounded-full h-3.5 w-3.5 border-2 border-white/20 border-t-white"></div>}
@@ -610,16 +828,16 @@ export const LoginRegister: React.FC = () => {
 
             {/* Divider */}
             <div className="flex items-center justify-center my-6 gap-3 text-[10px] font-black uppercase tracking-wider text-slate-400">
-              <span className="h-[1px] bg-slate-200/50 dark:bg-slate-800/50 flex-1"></span>
+              <span className="h-[1px] bg-[#C7E5F4]/30 dark:bg-brand-dark/30 flex-1"></span>
               <span>OR</span>
-              <span className="h-[1px] bg-slate-200/50 dark:bg-slate-800/50 flex-1"></span>
+              <span className="h-[1px] bg-[#C7E5F4]/30 dark:bg-brand-dark/30 flex-1"></span>
             </div>
 
             <p className="text-center text-xs font-semibold text-slate-500 dark:text-slate-400">
               {isRegister ? 'Already have an account?' : "Don't have an account yet?"}{' '}
               <button
                 type="button"
-                className="text-rose-500 hover:underline font-bold"
+                className="text-brand-dark dark:text-brand-default hover:underline font-bold"
                 onClick={() => {
                   setIsRegister(!isRegister);
                   setError('');
@@ -631,9 +849,9 @@ export const LoginRegister: React.FC = () => {
           </div>
 
           {/* Developer Quick Login Panel */}
-          <div className="glass-panel border border-slate-200/50 dark:border-slate-800/40 p-6 h-fit">
-            <h3 className="text-base font-extrabold text-slate-800 dark:text-slate-100 border-b border-slate-200/50 dark:border-slate-800/50 pb-3 flex items-center gap-1.5">
-              <Sparkles className="text-rose-500 w-4.5 h-4.5 animate-pulse" />
+          <div className="glass-panel border border-brand-default/30 dark:border-brand-dark/40 p-6 shadow-sm">
+            <h3 className="text-base font-extrabold text-brand-dark dark:text-slate-100 border-b border-brand-default/20 dark:border-brand-dark/30 pb-3 flex items-center gap-1.5">
+              <Sparkles className="text-brand-dark dark:text-brand-default w-4.5 h-4.5 animate-pulse" />
               Dev Quick Login Desk
             </h3>
             <p className="text-[10px] text-slate-400 dark:text-slate-500 font-bold mb-4 mt-2 leading-normal">
@@ -647,13 +865,13 @@ export const LoginRegister: React.FC = () => {
                   type="button"
                   onClick={() => triggerQuickLogin(dev)}
                   disabled={loading}
-                  className="flex items-center justify-between w-full border border-slate-200/50 dark:border-slate-800/50 bg-white/40 dark:bg-slate-900/10 hover:bg-rose-500/5 hover:border-rose-500/35 rounded-xl px-3.5 py-2.5 text-left transition-all duration-250 disabled:opacity-50"
+                  className="flex items-center justify-between w-full border border-brand-default/30 dark:border-brand-dark/40 bg-brand-light/20 dark:bg-brand-dark/10 hover:bg-brand-light/50 dark:hover:bg-brand-dark/20 rounded-xl px-3.5 py-2.5 text-left transition-all duration-250 disabled:opacity-50"
                 >
                   <div className="flex flex-col gap-0.5 leading-tight">
-                    <span className="text-xs text-slate-700 dark:text-slate-350 font-bold">{dev.title}</span>
-                    <span className="text-slate-400 dark:text-slate-500 text-[10px] font-semibold">{dev.email}</span>
+                    <span className="text-xs text-brand-dark dark:text-brand-light font-extrabold">{dev.title}</span>
+                    <span className="text-slate-450 dark:text-slate-500 text-[10px] font-bold">{dev.email}</span>
                   </div>
-                  <LogIn className="w-4 h-4 text-slate-400" />
+                  <LogIn className="w-4 h-4 text-brand-dark dark:text-brand-light" />
                 </button>
               ))}
             </div>
@@ -663,3 +881,18 @@ export const LoginRegister: React.FC = () => {
     </div>
   );
 };
+
+// Helper components since standard Lucide Heart might clash or be missing
+const HeartIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
+  <svg
+    viewBox="0 0 24 24"
+    fill="currentColor"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    {...props}
+  >
+    <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" />
+  </svg>
+);

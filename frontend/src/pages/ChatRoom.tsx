@@ -95,7 +95,9 @@ export const ChatRoom: React.FC = () => {
     fetchHistory();
 
     // Connect WebSocket
-    const wsUrl = `ws://localhost:8000/api/v1/chat/ws/${activeRoom.id}?token=${token}`;
+    const wsBase = import.meta.env.VITE_WS_URL || `ws://${window.location.host}/api/v1/chat/ws`;
+    // If wsBase already ends with /chat/ws or similar, concatenate cleanly
+    const wsUrl = `${wsBase}/${activeRoom.id}?token=${token}`;
     const ws = new WebSocket(wsUrl);
     socketRef.current = ws;
 
@@ -123,7 +125,7 @@ export const ChatRoom: React.FC = () => {
 
     ws.onerror = (err) => {
       console.error('WebSocket error:', err);
-      setError('WebSocket connection error.');
+      setError('WebSocket connection error. Retrying or Gateway unreachable.');
     };
 
     ws.onclose = () => {
@@ -172,12 +174,12 @@ export const ChatRoom: React.FC = () => {
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-[calc(100vh-160px)]">
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-[calc(100vh-180px)] p-6">
       
       {/* LEFT PANEL: Matched Active Rooms List */}
-      <div className="glass-panel border border-slate-200/50 dark:border-slate-800/40 lg:col-span-4 flex flex-col h-full overflow-hidden p-6">
-        <h3 className="text-sm font-extrabold border-b border-slate-200/40 dark:border-slate-800/40 pb-3 flex items-center gap-1.5 text-slate-800 dark:text-slate-200">
-          <MessageSquare className="text-rose-500 w-4.5 h-4.5" />
+      <div className="glass-panel lg:col-span-4 flex flex-col h-full overflow-hidden p-6">
+        <h3 className="text-sm font-extrabold border-b border-brand-default/20 dark:border-brand-dark/20 pb-3 flex items-center gap-1.5 text-brand-dark dark:text-slate-200">
+          <MessageSquare className="text-brand-dark dark:text-brand-default w-4.5 h-4.5" />
           Active Match Chats
         </h3>
 
@@ -195,19 +197,19 @@ export const ChatRoom: React.FC = () => {
                   onClick={() => selectRoomForRequest(req)}
                   className={`p-3.5 border rounded-2xl flex flex-col gap-1 text-left transition-all duration-200 ${
                     isActive
-                      ? 'bg-rose-500/10 border-rose-500/35 text-rose-500'
-                      : 'border-slate-200/60 dark:border-slate-800/60 hover:border-slate-350 dark:hover:border-slate-800'
+                      ? 'bg-brand-light border-brand-default text-brand-dark dark:bg-brand-dark/30 dark:border-brand-dark/50'
+                      : 'border-brand-default/20 dark:border-brand-dark/30 hover:border-brand-default/45 dark:hover:border-brand-dark/60'
                   }`}
                 >
                   <div className="flex justify-between items-center w-full">
-                    <span className="font-bold text-xs text-slate-700 dark:text-slate-300">
+                    <span className="font-bold text-xs text-brand-dark dark:text-slate-200">
                       {getPartnerName(req)}
                     </span>
-                    <span className="inline-block bg-rose-500/10 text-rose-500 dark:text-rose-400 border border-rose-500/10 px-1.5 py-0.5 rounded-md text-[8px] font-bold uppercase tracking-wider">
+                    <span className="inline-block bg-brand-light text-brand-dark dark:bg-brand-dark/50 dark:text-brand-light px-2 py-0.5 rounded-md text-[8px] font-bold uppercase tracking-wider">
                       {req.blood_group} Needed
                     </span>
                   </div>
-                  <span className="text-[9px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">
+                  <span className="text-[9px] text-[#2C5E7A] dark:text-brand-default font-extrabold uppercase tracking-wider">
                     Request ID #{req.id}
                   </span>
                 </button>
@@ -218,13 +220,13 @@ export const ChatRoom: React.FC = () => {
       </div>
 
       {/* RIGHT PANEL: Chat Workspace */}
-      <div className="glass-panel border border-slate-200/50 dark:border-slate-800/40 lg:col-span-8 flex flex-col h-full overflow-hidden">
+      <div className="glass-panel lg:col-span-8 flex flex-col h-full overflow-hidden">
         {activeRoom && activeRequest ? (
           <div className="flex flex-col h-full">
             {/* Header info */}
-            <div className="p-4 border-b border-slate-200/40 dark:border-slate-800/40 bg-slate-100/10 dark:bg-slate-900/10 flex justify-between items-center">
+            <div className="p-4 border-b border-brand-default/20 dark:border-brand-dark/20 bg-slate-50/50 dark:bg-brand-dark/10 flex justify-between items-center">
               <div>
-                <h4 className="font-bold text-sm text-slate-800 dark:text-slate-200">
+                <h4 className="font-bold text-sm text-brand-dark dark:text-slate-200">
                   Chatting with {getPartnerName(activeRequest)}
                 </h4>
                 <p className="text-[9px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider mt-0.5">
@@ -232,26 +234,26 @@ export const ChatRoom: React.FC = () => {
                 </p>
               </div>
               <div className="flex items-center gap-1.5">
-                <Heart className="w-4.5 h-4.5 text-rose-500 fill-rose-500 animate-pulse" />
-                <span className="inline-block bg-slate-850 text-white font-extrabold text-[10px] px-2.5 py-0.5 rounded-lg border border-slate-700">
+                <Heart className="w-4.5 h-4.5 text-brand-dark fill-brand-dark/20 dark:text-brand-default animate-pulse" />
+                <span className="inline-block bg-brand-dark text-white font-extrabold text-[10px] px-2.5 py-0.5 rounded-lg dark:bg-brand-default dark:text-brand-dark">
                   {activeRequest.blood_group}
                 </span>
               </div>
             </div>
 
             {error && (
-              <div className="bg-rose-500/10 border-b border-rose-500/15 text-rose-600 dark:text-rose-400 text-xs p-2.5 font-bold flex items-center gap-1.5">
+              <div className="bg-red-500/10 border-b border-red-500/15 text-[#FF5E5E] text-xs p-2.5 font-bold flex items-center gap-1.5">
                 <AlertCircle className="w-4 h-4" />
                 <span>{error}</span>
               </div>
             )}
 
             {/* Chat Body */}
-            <div className="flex-grow p-6 overflow-y-auto bg-slate-50/10 dark:bg-slate-950/5 flex flex-col gap-4">
+            <div className="flex-grow p-6 overflow-y-auto bg-slate-50/20 dark:bg-brand-darkBg/10 flex flex-col gap-4">
               {messages.length === 0 ? (
                 <div className="flex flex-col items-center justify-center flex-grow opacity-45 gap-1.5 mt-12 text-slate-400">
-                  <MessageSquare className="w-10 h-10" />
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-center">Send a message to coordinate coordinates & timing.</span>
+                  <MessageSquare className="w-10 h-10 text-brand-default" />
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-center">Send a message to coordinate collections & timing.</span>
                 </div>
               ) : (
                 messages.map((msg, index) => {
@@ -263,8 +265,8 @@ export const ChatRoom: React.FC = () => {
                       </div>
                       <div className={`p-3 rounded-2xl max-w-xs sm:max-w-sm text-xs font-semibold shadow-sm leading-relaxed ${
                         isMe 
-                          ? 'bg-rose-500 text-white rounded-br-none' 
-                          : 'bg-white/60 dark:bg-slate-900/30 border border-slate-200/50 dark:border-slate-800/40 text-slate-800 dark:text-slate-200 rounded-bl-none'
+                          ? 'bg-[#10354A] text-white rounded-br-none dark:bg-brand-default dark:text-brand-dark' 
+                          : 'bg-[#DDEFF7]/65 border border-brand-default/30 text-[#10354A] rounded-bl-none dark:bg-brand-dark/20 dark:border-brand-dark/40 dark:text-brand-light'
                       }`}>
                         {msg.message}
                       </div>
@@ -276,22 +278,22 @@ export const ChatRoom: React.FC = () => {
             </div>
 
             {/* Chat Footer Input */}
-            <form onSubmit={sendMessage} className="p-4 border-t border-slate-200/40 dark:border-slate-800/40 bg-white/40 dark:bg-slate-900/10 flex gap-3">
+            <form onSubmit={sendMessage} className="p-4 border-t border-brand-default/20 dark:border-brand-dark/20 bg-white/40 dark:bg-brand-darkCard/10 flex gap-3">
               <input
                 type="text"
-                placeholder="Type a message to coordinate collection..."
-                className="w-full bg-white/40 dark:bg-slate-900/30 border border-slate-200 dark:border-slate-800 focus:border-rose-500 dark:focus:border-rose-500 outline-none rounded-xl px-3.5 py-2 text-xs font-semibold text-slate-800 dark:text-slate-100"
+                placeholder="Type a message to coordinate..."
+                className="w-full bg-white dark:bg-brand-darkBg border border-brand-default/45 dark:border-brand-dark/50 focus:border-brand-dark outline-none rounded-xl px-3.5 py-2 text-xs font-semibold text-brand-dark dark:text-slate-100"
                 value={typedMessage}
                 onChange={(e) => setTypedMessage(e.target.value)}
               />
-              <button type="submit" className="w-9 h-9 flex items-center justify-center bg-rose-500 hover:bg-rose-600 text-white rounded-full transition-all shadow-md">
+              <button type="submit" className="w-9 h-9 flex items-center justify-center bg-[#10354A] hover:bg-[#1A4B66] text-white rounded-full transition-all shadow-md dark:bg-brand-default dark:text-brand-dark">
                 <Send className="w-4 h-4" />
               </button>
             </form>
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center h-full opacity-40 gap-2 text-slate-400">
-            <MessageSquare className="w-12 h-12" />
+            <MessageSquare className="w-12 h-12 text-brand-default" />
             <span className="font-bold text-xs uppercase tracking-wider">Select an active match chat room to start coordinating.</span>
           </div>
         )}
@@ -300,3 +302,4 @@ export const ChatRoom: React.FC = () => {
     </div>
   );
 };
+export default ChatRoom;

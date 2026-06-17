@@ -1,0 +1,85 @@
+name: Production Deployment
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch: # Allow manual triggers via GitHub Actions UI
+
+jobs:
+  deploy:
+    name: Deploy to Oracle Cloud
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        env:
+          SECRET_KEY: ${{ secrets.SECRET_KEY }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          NTFY_BASE_URL: ${{ secrets.NTFY_BASE_URL }}
+          NTFY_TOPIC_PREFIX: ${{ secrets.NTFY_TOPIC_PREFIX }}
+          MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
+          SARVAM_API_KEY: ${{ secrets.SARVAM_API_KEY }}
+          SERVER_IP: ${{ secrets.SERVER_IP }}
+          RABBITMQ_USER: ${{ secrets.RABBITMQ_USER }}
+          RABBITMQ_PASS: ${{ secrets.RABBITMQ_PASS }}
+        with:
+          host: ${{ secrets.ORACLE_HOST }}
+          username: ${{ secrets.ORACLE_USER }}
+          key: ${{ secrets.ORACLE_SSH_KEY }}
+          port: 22
+          envs: SECRET_KEY,SMTP_USER,SMTP_PASS,NTFY_BASE_URL,NTFY_TOPIC_PREFIX,MISTRAL_API_KEY,SARVAM_API_KEY,SERVER_IP,RABBITMQ_USER,RABBITMQ_PASS
+          script: |
+            set -e
+
+            # Navigate to the repository directory
+            cd ~/AI4Good_RaktSaanchar || {
+              echo "Error: Directory ~/AI4Good_RaktSaanchar not found. Please clone the repository manually on the VM first."
+              exit 1
+            }
+
+            # Hard reset local repo to discard any local modifications
+            echo "Fetching latest changes..."
+            git fetch origin main
+            git reset --hard origin/main
+
+            # Dynamically recreate .env from environment secrets
+            echo "Creating production .env file..."
+            cat << EOF > .env
+            SECRET_KEY="${SECRET_KEY}"
+            SMTP_HOST="smtp.gmail.com"
+            SMTP_PORT=587
+            SMTP_USER="${SMTP_USER}"
+            SMTP_PASS="${SMTP_PASS}"
+            NTFY_BASE_URL="${NTFY_BASE_URL:-https://ntfy.sh}"
+            NTFY_TOPIC_PREFIX="${NTFY_TOPIC_PREFIX:-raktsaanchar-prod}"
+            MISTRAL_API_KEY="${MISTRAL_API_KEY}"
+            SARVAM_API_KEY="${SARVAM_API_KEY}"
+            RABBITMQ_USER="${RABBITMQ_USER:-rakt}"
+            RABBITMQ_PASS="${RABBITMQ_PASS:-rakt}"
+            SERVER_IP="${SERVER_IP}"
+            EOF
+
+            # Ensure models directory exists
+            mkdir -p models
+
+            # Build and deploy using Docker Compose
+            echo "Rebuilding and starting Docker containers..."
+            docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+
+            # Clean up dangling images to keep storage footprint minimal (very important on 1GB RAM and standard SSD storage)
+            echo "Pruning unused Docker images..."
+            docker image prune -f
+
+            echo "Deployment completed successfully! Running gateway healthcheck..."
+            sleep 5
+            curl -f http://localhost/health || {
+              echo "Warning: Healthcheck failed! Checking Docker service statuses."
+              docker compose ps
+              exit 1
+            }

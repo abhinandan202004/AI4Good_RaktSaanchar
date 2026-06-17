@@ -1,51 +1,264 @@
-version: "3.8"
+version: "3.9"
+
+# =============================================================================
+# RaktSaanchar — Microservices docker-compose
+# =============================================================================
+# Run: docker-compose up --build
+# RabbitMQ UI: http://localhost:15672  (rakt / rakt)
+# ntfy UI:     http://localhost:8080
+# API:         http://localhost/api/v1
+# =============================================================================
+
+networks:
+  rakt-net:
+    driver: bridge
+
+volumes:
+  db_data:
+  rabbitmq_data:
+  ntfy_data:
 
 services:
+
+  # ── Infrastructure ──────────────────────────────────────────────────────────
+
   db:
     image: postgres:15
+    networks: [rakt-net]
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: rakt
-    ports:
-      - "5433:5432"
+      POSTGRES_USER: rakt
+      POSTGRES_PASSWORD: rakt
+      POSTGRES_DB: raktsaanchar
     volumes:
       - db_data:/var/lib/postgresql/data
+      - ./infra/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rakt -d raktsaanchar"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   redis:
-    image: redis:7
+    image: redis:7-alpine
+    networks: [rakt-net]
     ports:
       - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
 
-  backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    depends_on:
-      - db
-      - redis
-    env_file:
-      - ./backend/.env
+  rabbitmq:
+    image: rabbitmq:3-management
+    networks: [rakt-net]
     environment:
-      - DATABASE_URL=postgresql://postgres:postgres@db:5432/rakt
-      - REDIS_URL=redis://redis:6379
-    ports:
-      - "8000:8000"
+      RABBITMQ_DEFAULT_USER: rakt
+      RABBITMQ_DEFAULT_PASS: rakt
     volumes:
-      - ./backend:/app
-    command: sh -c "until python -c 'import socket, time; s=socket.socket(); s.settimeout(2); s.connect((\"db\",5432)); s.close()'; do echo 'Waiting for db...'; sleep 1; done; uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
+      - rabbitmq_data:/var/lib/rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"   # Management UI
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+
+  ntfy:
+    image: binwiederhier/ntfy
+    command: serve
+    networks: [rakt-net]
+    volumes:
+      - ntfy_data:/var/lib/ntfy
+    ports:
+      - "8080:80"
+
+  # ── API Gateway ─────────────────────────────────────────────────────────────
+
+  gateway:
+    image: nginx:alpine
+    networks: [rakt-net]
+    ports:
+      - "80:80"
+    volumes:
+      - ./infra/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      auth-service:
+        condition: service_started
+      core-service:
+        condition: service_started
+      notification-service:
+        condition: service_started
+      chat-service:
+        condition: service_started
+      ml-service:
+        condition: service_started
+      chatbot-service:
+        condition: service_started
+
+  # ── Microservices ────────────────────────────────────────────────────────────
+
+  auth-service:
+    build:
+      context: ./services/auth-service
+      dockerfile: Dockerfile
+    networks: [rakt-net]
+    environment:
+      DATABASE_URL: postgresql://rakt:rakt@db:5432/raktsaanchar?options=-csearch_path%3Dauth%2Cpublic
+      REDIS_URL: redis://redis:6379
+      RABBITMQ_URL: amqp://rakt:rakt@rabbitmq/
+      SECRET_KEY: ${SECRET_KEY}
+      ALGORITHM: HS256
+      ACCESS_TOKEN_EXPIRE_MINUTES: "30"
+      REFRESH_TOKEN_EXPIRE_DAYS: "7"
+      SMTP_HOST: ${SMTP_HOST:-smtp.gmail.com}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER}
+      SMTP_PASS: ${SMTP_PASS}
+      SENDER_NAME: RaktSaanchar
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    ports:
+      - "8001:8001"
+
+  core-service:
+    build:
+      context: ./services/core-service
+      dockerfile: Dockerfile
+    networks: [rakt-net]
+    environment:
+      DATABASE_URL: postgresql://rakt:rakt@db:5432/raktsaanchar?options=-csearch_path%3Dcore%2Cpublic
+      REDIS_URL: redis://redis:6379
+      RABBITMQ_URL: amqp://rakt:rakt@rabbitmq/
+      SECRET_KEY: ${SECRET_KEY}
+      ALGORITHM: HS256
+      ML_SERVICE_URL: http://ml-service:8005
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      ml-service:
+        condition: service_started
+    ports:
+      - "8002:8002"
+
+  notification-service:
+    build:
+      context: ./services/notification-service
+      dockerfile: Dockerfile
+    networks: [rakt-net]
+    environment:
+      DATABASE_URL: postgresql://rakt:rakt@db:5432/raktsaanchar?options=-csearch_path%3Dnotifications%2Cpublic
+      CORE_DB_URL: postgresql://rakt:rakt@db:5432/raktsaanchar?options=-csearch_path%3Dcore%2Cpublic
+      RABBITMQ_URL: amqp://rakt:rakt@rabbitmq/
+      SECRET_KEY: ${SECRET_KEY}
+      SMTP_HOST: ${SMTP_HOST:-smtp.gmail.com}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER}
+      SMTP_PASS: ${SMTP_PASS}
+      SENDER_NAME: RaktSaanchar
+      NTFY_BASE_URL: ${NTFY_BASE_URL:-http://ntfy:80}
+      NTFY_TOPIC_PREFIX: ${NTFY_TOPIC_PREFIX:-raktsaanchar}
+    depends_on:
+      db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      ntfy:
+        condition: service_started
+    ports:
+      - "8003:8003"
+
+  chat-service:
+    build:
+      context: ./services/chat-service
+      dockerfile: Dockerfile
+    networks: [rakt-net]
+    environment:
+      DATABASE_URL: postgresql://rakt:rakt@db:5432/raktsaanchar?options=-csearch_path%3Dchat%2Cpublic
+      REDIS_URL: redis://redis:6379
+      RABBITMQ_URL: amqp://rakt:rakt@rabbitmq/
+      SECRET_KEY: ${SECRET_KEY}
+      ALGORITHM: HS256
+      NTFY_BASE_URL: ${NTFY_BASE_URL:-http://ntfy:80}
+      NTFY_TOPIC_PREFIX: ${NTFY_TOPIC_PREFIX:-raktsaanchar}
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    ports:
+      - "8004:8004"
+
+  ml-service:
+    build:
+      context: ./services/ml-service
+      dockerfile: Dockerfile
+    networks: [rakt-net]
+    environment:
+      # Read-only access to core schema (donors, patients, blood_requests tables)
+      DATABASE_URL: postgresql://rakt:rakt@db:5432/raktsaanchar?options=-csearch_path%3Dcore%2Cpublic
+      SECRET_KEY: ${SECRET_KEY}
+      ALGORITHM: HS256
+      MISTRAL_API_KEY: ${MISTRAL_API_KEY}
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8005:8005"
+    volumes:
+      - ./models:/app/models:ro    # Mount .pkl model files as read-only
+
+  chatbot-service:
+    build:
+      context: ./services/chatbot-service
+      dockerfile: Dockerfile
+    networks: [rakt-net]
+    environment:
+      REDIS_URL: redis://redis:6379
+      SECRET_KEY: ${SECRET_KEY}
+      ALGORITHM: HS256
+      MISTRAL_API_KEY: ${MISTRAL_API_KEY}
+      SARVAM_API_KEY: ${SARVAM_API_KEY}
+      CORE_SERVICE_URL: http://core-service:8002
+    depends_on:
+      redis:
+        condition: service_healthy
+      core-service:
+        condition: service_started
+    ports:
+      - "8006:8006"
+
+  # ── Frontend ─────────────────────────────────────────────────────────────────
 
   frontend:
     image: node:20-bullseye
     working_dir: /app
+    networks: [rakt-net]
     volumes:
       - ./frontend:/app
       - /app/node_modules
     ports:
       - "5173:5173"
     command: sh -c "npm install --legacy-peer-deps && npm run dev -- --host 0.0.0.0"
+    environment:
+      VITE_API_BASE_URL: http://localhost/api/v1
+      VITE_WS_URL: ws://localhost/api/v1/chat/ws
+      VITE_NTFY_BASE_URL: ${NTFY_BASE_URL:-https://ntfy.sh}
+      VITE_NTFY_TOPIC_PREFIX: ${NTFY_TOPIC_PREFIX:-raktsaanchar}
     depends_on:
-      - backend
-
-volumes:
-  db_data:
+      - gateway

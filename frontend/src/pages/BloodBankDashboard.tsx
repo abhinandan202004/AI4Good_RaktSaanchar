@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { ShieldCheck, Plus, Check, FileText, Upload, Heart, Inbox, Activity } from 'lucide-react';
+import { ShieldCheck, Plus, Check, FileText, Upload, Heart, Inbox, Activity, Download } from 'lucide-react';
 import api from '../services/api';
 import { BloodInventory, BloodUnit, BloodRequest, BloodBankProfile } from '../types';
 
@@ -243,48 +243,48 @@ export const BloodBankDashboard: React.FC = () => {
 
   if (!bloodBankProfile) {
     return (
-      <div className="max-w-lg mx-auto glass-panel p-8 mt-10 border border-slate-200/50 dark:border-slate-800/40">
-        <h2 className="text-xl font-black mb-1.5 flex items-center gap-2 text-slate-800 dark:text-slate-100">
-          <ShieldCheck className="text-rose-500 w-5.5 h-5.5" />
+      <div className="max-w-lg mx-auto glass-panel p-8 mt-10 border border-brand-default/30 dark:border-brand-dark/40">
+        <h2 className="text-xl font-black mb-1.5 flex items-center gap-2 text-brand-dark dark:text-slate-100">
+          <ShieldCheck className="text-brand-dark dark:text-brand-default w-5.5 h-5.5" />
           Setup Blood Bank Profile
         </h2>
         <p className="text-xs text-slate-500 dark:text-slate-400 font-semibold mb-6">
           Register hospital details and GPS coordinates to coordinate pickups.
         </p>
         {error && (
-          <div className="bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 text-xs p-3 rounded-xl font-bold mb-4">
+          <div className="bg-red-500/10 border border-red-500/20 text-[#FF5E5E] text-xs p-3 rounded-xl font-bold mb-4">
             {error}
           </div>
         )}
         <form onSubmit={handleCreateProfile} className="flex flex-col gap-4">
           <div>
-            <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Hospital Name</label>
+            <label className="block text-[10px] font-bold uppercase tracking-wider text-[#2C5E7A] dark:text-[#C7E5F4] mb-1.5 font-bold">Hospital Name</label>
             <input
               type="text"
               placeholder="e.g. Mumbai Central Blood Bank"
-              className="w-full bg-white/40 dark:bg-slate-900/30 border border-slate-200 dark:border-slate-800 focus:border-rose-500 dark:focus:border-rose-500 focus:ring-1 focus:ring-rose-500 outline-none rounded-xl px-3 py-2 text-sm text-slate-800 dark:text-slate-100"
+              className="w-full bg-white dark:bg-brand-darkBg border border-brand-default/45 dark:border-brand-dark/50 focus:border-brand-dark focus:ring-1 focus:ring-brand-dark outline-none rounded-xl px-3 py-2 text-sm text-brand-dark dark:text-slate-100"
               value={hospitalName}
               onChange={(e) => setHospitalName(e.target.value)}
               required
             />
           </div>
           <div>
-            <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Contact Phone</label>
+            <label className="block text-[10px] font-bold uppercase tracking-wider text-[#2C5E7A] dark:text-[#C7E5F4] mb-1.5 font-bold">Contact Phone</label>
             <input
               type="text"
               placeholder="022-9876543"
-              className="w-full bg-white/40 dark:bg-slate-900/30 border border-slate-200 dark:border-slate-800 focus:border-rose-500 dark:focus:border-rose-500 focus:ring-1 focus:ring-rose-500 outline-none rounded-xl px-3 py-2 text-sm text-slate-800 dark:text-slate-100"
+              className="w-full bg-white dark:bg-brand-darkBg border border-brand-default/45 dark:border-brand-dark/50 focus:border-brand-dark focus:ring-1 focus:ring-brand-dark outline-none rounded-xl px-3 py-2 text-sm text-brand-dark dark:text-slate-100"
               value={contactPhone}
               onChange={(e) => setContactPhone(e.target.value)}
               required
             />
           </div>
           <div>
-            <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Address</label>
+            <label className="block text-[10px] font-bold uppercase tracking-wider text-[#2C5E7A] dark:text-[#C7E5F4] mb-1.5 font-bold">Address</label>
             <input
               type="text"
               placeholder="Mumbai Central, Mumbai"
-              className="w-full bg-white/40 dark:bg-slate-900/30 border border-slate-200 dark:border-slate-800 focus:border-rose-500 dark:focus:border-rose-500 focus:ring-1 focus:ring-rose-500 outline-none rounded-xl px-3 py-2 text-sm text-slate-800 dark:text-slate-100"
+              className="w-full bg-white dark:bg-brand-darkBg border border-brand-default/45 dark:border-brand-dark/50 focus:border-brand-dark focus:ring-1 focus:ring-brand-dark outline-none rounded-xl px-3 py-2 text-sm text-brand-dark dark:text-slate-100"
               value={address}
               onChange={(e) => setAddress(e.target.value)}
               required
@@ -292,24 +292,24 @@ export const BloodBankDashboard: React.FC = () => {
           </div>
           <div className="grid grid-cols-2 gap-3.5">
             <div>
-              <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Latitude</label>
+              <label className="block text-[10px] font-bold uppercase tracking-wider text-[#2C5E7A] dark:text-[#C7E5F4] mb-1.5 font-bold">Latitude</label>
               <input
                 type="number"
                 step="any"
                 placeholder="19.0760"
-                className="w-full bg-white/40 dark:bg-slate-900/30 border border-slate-200 dark:border-slate-800 focus:border-rose-500 dark:focus:border-rose-500 focus:ring-1 focus:ring-rose-500 outline-none rounded-xl px-3 py-2 text-sm text-slate-800 dark:text-slate-100"
+                className="w-full bg-white dark:bg-brand-darkBg border border-brand-default/45 dark:border-brand-dark/50 focus:border-brand-dark focus:ring-1 focus:ring-brand-dark outline-none rounded-xl px-3 py-2 text-sm text-brand-dark dark:text-slate-100"
                 value={latitude || ''}
                 onChange={(e) => setLatitude(parseFloat(e.target.value))}
                 required
               />
             </div>
             <div>
-              <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Longitude</label>
+              <label className="block text-[10px] font-bold uppercase tracking-wider text-[#2C5E7A] dark:text-[#C7E5F4] mb-1.5 font-bold">Longitude</label>
               <input
                 type="number"
                 step="any"
                 placeholder="72.8777"
-                className="w-full bg-white/40 dark:bg-slate-900/30 border border-slate-200 dark:border-slate-800 focus:border-rose-500 dark:focus:border-rose-500 focus:ring-1 focus:ring-rose-500 outline-none rounded-xl px-3 py-2 text-sm text-slate-800 dark:text-slate-100"
+                className="w-full bg-white dark:bg-brand-darkBg border border-brand-default/45 dark:border-brand-dark/50 focus:border-brand-dark focus:ring-1 focus:ring-brand-dark outline-none rounded-xl px-3 py-2 text-sm text-brand-dark dark:text-slate-100"
                 value={longitude || ''}
                 onChange={(e) => setLongitude(parseFloat(e.target.value))}
                 required
@@ -318,7 +318,7 @@ export const BloodBankDashboard: React.FC = () => {
           </div>
           <button 
             type="submit" 
-            className="w-full bg-rose-500 hover:bg-rose-600 text-white font-bold py-2.5 px-4 rounded-xl shadow-md transition-all text-xs uppercase tracking-wider mt-4" 
+            className="w-full btn-pill-primary mt-4" 
             disabled={loading}
           >
             Save Profile
@@ -329,12 +329,28 @@ export const BloodBankDashboard: React.FC = () => {
   }
 
   return (
-    <div className="max-w-[1600px] mx-auto grid grid-cols-1 xl:grid-cols-12 gap-6">
+    <div className="max-w-[1600px] mx-auto grid grid-cols-1 xl:grid-cols-12 gap-6 p-6">
       
+      {/* Floating Header */}
+      <div className="xl:col-span-12 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-transparent py-2 border-b border-brand-default/20 dark:border-brand-dark/20 mb-2">
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 rounded-full bg-brand-light text-brand-dark border border-brand-default flex items-center justify-center font-black text-lg uppercase dark:bg-brand-dark dark:text-brand-light">
+            🏥
+          </div>
+          <div>
+            <span className="block text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Hospital Desk / Blood Bank</span>
+            <h2 className="text-xl font-black text-brand-dark dark:text-white leading-tight mt-0.5">{bloodBankProfile.hospital_name}</h2>
+          </div>
+        </div>
+        <div className="text-right text-xs font-bold text-slate-450 dark:text-slate-400">
+          Phone: {bloodBankProfile.contact_phone} | Address: {bloodBankProfile.address}
+        </div>
+      </div>
+
       {/* Messages */}
       <div className="xl:col-span-12 flex flex-col gap-2">
         {error && (
-          <div className="bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 text-xs p-3 rounded-xl font-bold shadow-sm">
+          <div className="bg-red-500/10 border border-red-500/20 text-[#FF5E5E] text-xs p-3 rounded-xl font-bold shadow-sm">
             {error}
           </div>
         )}
@@ -349,8 +365,8 @@ export const BloodBankDashboard: React.FC = () => {
       <div className="flex flex-col gap-6 xl:col-span-4">
         
         {/* Inventory Stock Grid */}
-        <div className="glass-panel border border-slate-200/50 dark:border-slate-800/40 p-6">
-          <h3 className="text-[10px] font-black border-b border-slate-200/40 dark:border-slate-800/40 pb-3 uppercase tracking-wider text-slate-400">
+        <div className="glass-panel p-6">
+          <h3 className="text-[10px] font-black border-b border-brand-default/20 dark:border-brand-dark/20 pb-3 uppercase tracking-wider text-slate-400">
             Live Stock Levels
           </h3>
 
@@ -359,20 +375,20 @@ export const BloodBankDashboard: React.FC = () => {
               const inv = inventory.find(i => i.blood_group === bg);
               const qty = inv ? inv.quantity_ml : 0;
               return (
-                <div key={bg} className={`flex flex-col items-center p-2 rounded-xl border transition-all ${qty > 0 ? 'bg-rose-500/10 border-rose-500/20 font-bold text-rose-500' : 'bg-slate-100/40 border-slate-200/40 dark:bg-slate-900/10 dark:border-slate-850 opacity-60'}`}>
+                <div key={bg} className={`flex flex-col items-center p-2 rounded-xl border transition-all ${qty > 0 ? 'bg-brand-light border-brand-default/60 font-bold text-brand-dark dark:bg-brand-dark dark:text-brand-light dark:border-brand-dark/60' : 'bg-slate-50/50 border-brand-default/20 dark:bg-brand-dark/10 dark:border-brand-dark/30 opacity-60'}`}>
                   <span className="font-extrabold">{bg}</span>
-                  <span className="text-[10px] font-semibold mt-1">{qty} ml</span>
+                  <span className="text-[10px] font-bold mt-1">{qty} ml</span>
                 </div>
               );
             })}
           </div>
 
           {/* Set Stock Form */}
-          <form onSubmit={handleAddStock} className="flex gap-2.5 items-end mt-6 border-t border-slate-200/40 dark:border-slate-800/40 pt-4">
-            <div className="flex-1">
-              <label className="block text-[9px] font-bold uppercase tracking-wider text-slate-550 dark:text-slate-450 mb-1">Blood</label>
+          <form onSubmit={handleAddStock} className="flex gap-2.5 items-end mt-6 border-t border-brand-default/20 dark:border-brand-dark/20 pt-4">
+            <div className="flex-grow">
+              <label className="block text-[9px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">Blood Group</label>
               <select
-                className="w-full bg-white/40 dark:bg-slate-900/30 border border-slate-200 dark:border-slate-800 focus:border-rose-500 dark:focus:border-rose-500 outline-none rounded-lg px-2 py-1 text-xs font-bold text-slate-800 dark:text-slate-100"
+                className="w-full bg-white dark:bg-brand-darkBg border border-brand-default/40 dark:border-brand-dark/50 focus:border-brand-dark outline-none rounded-lg px-2 py-1.5 text-xs font-bold text-brand-dark dark:text-slate-100"
                 value={invBloodGroup}
                 onChange={(e) => setInvBloodGroup(e.target.value)}
               >
@@ -381,23 +397,23 @@ export const BloodBankDashboard: React.FC = () => {
                 ))}
               </select>
             </div>
-            <div className="flex-1">
-              <label className="block text-[9px] font-bold uppercase tracking-wider text-slate-550 dark:text-slate-450 mb-1">Qty (ml)</label>
+            <div className="flex-grow">
+              <label className="block text-[9px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">Qty (ml)</label>
               <input
                 type="number"
-                className="w-full bg-white/40 dark:bg-slate-900/30 border border-slate-200 dark:border-slate-800 focus:border-rose-500 dark:focus:border-rose-500 outline-none rounded-lg px-2.5 py-1 text-xs font-bold text-slate-800 dark:text-slate-100"
+                className="w-full bg-white dark:bg-brand-darkBg border border-brand-default/40 dark:border-brand-dark/50 focus:border-brand-dark outline-none rounded-lg px-2.5 py-1.5 text-xs font-bold text-brand-dark dark:text-slate-100"
                 value={invQty}
                 onChange={(e) => setInvQty(parseInt(e.target.value))}
               />
             </div>
-            <button type="submit" className="bg-rose-500 hover:bg-rose-600 text-white font-bold py-1 px-3.5 rounded-lg text-xs uppercase tracking-wider transition-all">Set</button>
+            <button type="submit" className="bg-[#10354A] hover:bg-[#1A4B66] text-white font-bold py-1.5 px-3.5 rounded-lg text-xs uppercase tracking-wider transition-all dark:bg-brand-default dark:text-brand-dark">Set</button>
           </form>
         </div>
 
         {/* Check-In Desk Form */}
-        <div className="glass-panel border border-slate-200/50 dark:border-slate-800/40 p-6">
-          <h3 className="text-base font-extrabold border-b border-slate-200/40 dark:border-slate-800/40 pb-3 flex items-center gap-2 text-slate-800 dark:text-slate-200">
-            <Plus className="w-5 h-5 text-rose-500" />
+        <div className="glass-panel p-6">
+          <h3 className="text-base font-extrabold border-b border-brand-default/15 dark:border-brand-dark/20 pb-3 flex items-center gap-2 text-brand-dark dark:text-slate-100">
+            <Plus className="w-5 h-5 text-brand-dark dark:text-brand-default" />
             Donor Unit Check-In
           </h3>
           <form onSubmit={handleDonorCheckIn} className="flex flex-col gap-3.5 mt-4">
@@ -406,7 +422,7 @@ export const BloodBankDashboard: React.FC = () => {
               <input
                 type="number"
                 placeholder="e.g. 99"
-                className="w-full bg-white/40 dark:bg-slate-900/30 border border-slate-200 dark:border-slate-800 focus:border-rose-500 dark:focus:border-rose-500 outline-none rounded-xl px-3 py-2 text-sm text-slate-800 dark:text-slate-100"
+                className="w-full bg-white dark:bg-brand-darkBg border border-brand-default/40 dark:border-brand-dark/50 focus:border-brand-dark outline-none rounded-xl px-3 py-2 text-sm text-brand-dark dark:text-slate-100"
                 value={checkDonorId}
                 onChange={(e) => setCheckDonorId(e.target.value)}
                 required
@@ -416,7 +432,7 @@ export const BloodBankDashboard: React.FC = () => {
               <div>
                 <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Blood Group</label>
                 <select
-                  className="w-full bg-white/40 dark:bg-slate-900/30 border border-slate-200 dark:border-slate-800 focus:border-rose-500 dark:focus:border-rose-500 outline-none rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 dark:text-slate-100"
+                  className="w-full bg-white dark:bg-brand-darkBg border border-brand-default/40 dark:border-brand-dark/50 focus:border-brand-dark outline-none rounded-xl px-3 py-2 text-xs font-semibold text-brand-dark dark:text-slate-100"
                   value={checkBloodGroup}
                   onChange={(e) => setCheckBloodGroup(e.target.value)}
                 >
@@ -429,7 +445,7 @@ export const BloodBankDashboard: React.FC = () => {
                 <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Volume (ml)</label>
                 <input
                   type="number"
-                  className="w-full bg-white/40 dark:bg-slate-900/30 border border-slate-200 dark:border-slate-800 focus:border-rose-500 dark:focus:border-rose-500 outline-none rounded-xl px-3 py-2 text-sm text-slate-800 dark:text-slate-100"
+                  className="w-full bg-white dark:bg-brand-darkBg border border-brand-default/40 dark:border-brand-dark/50 focus:border-brand-dark outline-none rounded-xl px-3 py-2 text-sm text-brand-dark dark:text-slate-100"
                   value={checkVolume}
                   onChange={(e) => setCheckVolume(parseInt(e.target.value))}
                   required
@@ -441,14 +457,14 @@ export const BloodBankDashboard: React.FC = () => {
               <input
                 type="text"
                 placeholder="Healthy vitals, safe check-in"
-                className="w-full bg-white/40 dark:bg-slate-900/30 border border-slate-200 dark:border-slate-800 focus:border-rose-500 dark:focus:border-rose-500 outline-none rounded-xl px-3 py-2 text-sm text-slate-800 dark:text-slate-100"
+                className="w-full bg-white dark:bg-brand-darkBg border border-brand-default/40 dark:border-brand-dark/50 focus:border-brand-dark outline-none rounded-xl px-3 py-2 text-sm text-brand-dark dark:text-slate-100"
                 value={checkNotes}
                 onChange={(e) => setCheckNotes(e.target.value)}
               />
             </div>
             <button 
               type="submit" 
-              className="w-full bg-rose-500 hover:bg-rose-600 text-white font-bold py-2.5 px-4 rounded-xl shadow-md transition-all text-xs uppercase tracking-wider mt-2" 
+              className="w-full btn-pill-primary text-xs uppercase tracking-wider mt-2" 
               disabled={loading}
             >
               Check-In Blood Unit
@@ -463,48 +479,48 @@ export const BloodBankDashboard: React.FC = () => {
         
         {/* Validation Reports & Upload Dialogs */}
         {(activeUnitId || activeReportId) && (
-          <div className="glass-panel border border-rose-500/10 bg-rose-500/5 p-6 animate-fade-in">
+          <div className="glass-panel p-6 border-brand-default/50 bg-[#DDEFF7]/20 dark:bg-brand-dark/10">
             {activeUnitId && (
               <form onSubmit={submitValidationReport} className="flex flex-col gap-4">
-                <h3 className="font-extrabold text-base flex items-center gap-1.5 text-rose-500 border-b border-rose-500/10 pb-2">
+                <h3 className="font-extrabold text-base flex items-center gap-1.5 text-brand-dark dark:text-brand-default border-b border-brand-default/20 pb-2">
                   <FileText className="w-5 h-5" />
                   Generate Lab Validation Report (Unit #{activeUnitId})
                 </h3>
                 <div className="grid grid-cols-4 gap-3">
                   <div>
-                    <label className="block text-[10px] font-bold uppercase tracking-wider text-rose-500 dark:text-rose-400 mb-1">Hemoglobin (g/dL)</label>
+                    <label className="block text-[10px] font-bold uppercase tracking-wider text-brand-dark dark:text-brand-light mb-1">Hemoglobin (g/dL)</label>
                     <input
                       type="number"
                       step="any"
-                      className="w-full bg-white/45 dark:bg-slate-900/35 border border-slate-200/50 dark:border-slate-800/55 focus:border-rose-500 dark:focus:border-rose-500 outline-none rounded-lg px-2.5 py-1.5 text-xs font-bold text-slate-800 dark:text-slate-100"
+                      className="w-full bg-white dark:bg-brand-darkBg border border-brand-default/40 dark:border-brand-dark/55 focus:border-brand-dark outline-none rounded-lg px-2.5 py-1.5 text-xs font-bold text-brand-dark dark:text-slate-100"
                       value={hemoglobin}
                       onChange={(e) => setHemoglobin(parseFloat(e.target.value))}
                       required
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] font-bold uppercase tracking-wider text-rose-500 dark:text-rose-400 mb-1">Systolic BP</label>
+                    <label className="block text-[10px] font-bold uppercase tracking-wider text-brand-dark dark:text-brand-light mb-1">Systolic BP</label>
                     <input
                       type="number"
-                      className="w-full bg-white/45 dark:bg-slate-900/35 border border-slate-200/50 dark:border-slate-800/55 focus:border-rose-500 dark:focus:border-rose-500 outline-none rounded-lg px-2.5 py-1.5 text-xs font-bold text-slate-800 dark:text-slate-100"
+                      className="w-full bg-white dark:bg-brand-darkBg border border-brand-default/40 dark:border-brand-dark/55 focus:border-brand-dark outline-none rounded-lg px-2.5 py-1.5 text-xs font-bold text-brand-dark dark:text-slate-100"
                       value={sysBp}
                       onChange={(e) => setSysBp(parseInt(e.target.value))}
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] font-bold uppercase tracking-wider text-rose-500 dark:text-rose-400 mb-1">Diastolic BP</label>
+                    <label className="block text-[10px] font-bold uppercase tracking-wider text-brand-dark dark:text-brand-light mb-1">Diastolic BP</label>
                     <input
                       type="number"
-                      className="w-full bg-white/45 dark:bg-slate-900/35 border border-slate-200/50 dark:border-slate-800/55 focus:border-rose-500 dark:focus:border-rose-500 outline-none rounded-lg px-2.5 py-1.5 text-xs font-bold text-slate-800 dark:text-slate-100"
+                      className="w-full bg-white dark:bg-brand-darkBg border border-brand-default/40 dark:border-brand-dark/55 focus:border-brand-dark outline-none rounded-lg px-2.5 py-1.5 text-xs font-bold text-brand-dark dark:text-slate-100"
                       value={diaBp}
                       onChange={(e) => setDiaBp(parseInt(e.target.value))}
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] font-bold uppercase tracking-wider text-rose-500 dark:text-rose-400 mb-1">Pulse (bpm)</label>
+                    <label className="block text-[10px] font-bold uppercase tracking-wider text-brand-dark dark:text-brand-light mb-1">Pulse (bpm)</label>
                     <input
                       type="number"
-                      className="w-full bg-white/45 dark:bg-slate-900/35 border border-slate-200/50 dark:border-slate-800/55 focus:border-rose-500 dark:focus:border-rose-500 outline-none rounded-lg px-2.5 py-1.5 text-xs font-bold text-slate-800 dark:text-slate-100"
+                      className="w-full bg-white dark:bg-brand-darkBg border border-brand-default/40 dark:border-brand-dark/55 focus:border-brand-dark outline-none rounded-lg px-2.5 py-1.5 text-xs font-bold text-brand-dark dark:text-slate-100"
                       value={pulse}
                       onChange={(e) => setPulse(parseInt(e.target.value))}
                     />
@@ -513,9 +529,9 @@ export const BloodBankDashboard: React.FC = () => {
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-[10px] font-bold uppercase tracking-wider text-rose-500 dark:text-rose-400 mb-1">Status</label>
+                    <label className="block text-[10px] font-bold uppercase tracking-wider text-brand-dark dark:text-brand-light mb-1">Status</label>
                     <select
-                      className="w-full bg-white/45 dark:bg-slate-900/35 border border-slate-200/50 dark:border-slate-800/55 focus:border-rose-500 dark:focus:border-rose-500 outline-none rounded-lg px-2 py-1.5 text-xs font-semibold text-slate-800 dark:text-slate-100"
+                      className="w-full bg-white dark:bg-brand-darkBg border border-brand-default/40 dark:border-brand-dark/55 focus:border-brand-dark outline-none rounded-lg px-2 py-1.5 text-xs font-semibold text-brand-dark dark:text-slate-100"
                       value={repStatus}
                       onChange={(e: any) => setRepStatus(e.target.value)}
                     >
@@ -524,10 +540,10 @@ export const BloodBankDashboard: React.FC = () => {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-[10px] font-bold uppercase tracking-wider text-rose-500 dark:text-rose-400 mb-1">Vitals Notes</label>
+                    <label className="block text-[10px] font-bold uppercase tracking-wider text-brand-dark dark:text-brand-light mb-1">Vitals Notes</label>
                     <input
                       type="text"
-                      className="w-full bg-white/45 dark:bg-slate-900/35 border border-slate-200/50 dark:border-slate-800/55 focus:border-rose-500 dark:focus:border-rose-500 outline-none rounded-lg px-2.5 py-1.5 text-xs text-slate-800 dark:text-slate-100"
+                      className="w-full bg-white dark:bg-brand-darkBg border border-brand-default/40 dark:border-brand-dark/55 focus:border-brand-dark outline-none rounded-lg px-2.5 py-1.5 text-xs text-brand-dark dark:text-slate-100"
                       value={repNotes}
                       onChange={(e) => setRepNotes(e.target.value)}
                     />
@@ -535,10 +551,10 @@ export const BloodBankDashboard: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-wider text-rose-500 dark:text-rose-400 mb-1">Improvement Recommendations</label>
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-brand-dark dark:text-brand-light mb-1">Improvement Recommendations</label>
                   <input
                     type="text"
-                    className="w-full bg-white/45 dark:bg-slate-900/35 border border-slate-200/50 dark:border-slate-800/55 focus:border-rose-500 dark:focus:border-rose-500 outline-none rounded-lg px-2.5 py-1.5 text-xs text-slate-800 dark:text-slate-100"
+                    className="w-full bg-white dark:bg-brand-darkBg border border-brand-default/40 dark:border-brand-dark/55 focus:border-brand-dark outline-none rounded-lg px-2.5 py-1.5 text-xs text-brand-dark dark:text-slate-100"
                     value={repRecs}
                     onChange={(e) => setRepRecs(e.target.value)}
                   />
@@ -546,14 +562,14 @@ export const BloodBankDashboard: React.FC = () => {
 
                 <div className="flex gap-2 justify-end mt-2 text-xs font-bold uppercase">
                   <button type="button" onClick={() => setActiveUnitId(null)} className="px-3 py-1.5 hover:bg-slate-500/10 text-slate-500 rounded-lg">Cancel</button>
-                  <button type="submit" className="px-3.5 py-1.5 bg-rose-500 hover:bg-rose-600 text-white rounded-lg transition-all">Submit Report</button>
+                  <button type="submit" className="px-3.5 py-1.5 bg-[#10354A] hover:bg-[#1A4B66] text-white rounded-lg transition-all dark:bg-brand-default dark:text-brand-dark">Submit Report</button>
                 </div>
               </form>
             )}
 
             {activeReportId && (
               <form onSubmit={uploadPdfReport} className="flex flex-col gap-4">
-                <h3 className="font-extrabold text-base flex items-center gap-1.5 text-rose-500 border-b border-rose-500/10 pb-2">
+                <h3 className="font-extrabold text-base flex items-center gap-1.5 text-brand-dark dark:text-brand-default border-b border-brand-default/20 pb-2">
                   <Upload className="w-5 h-5 animate-bounce" />
                   Upload PDF Validation Report (Report #{activeReportId})
                 </h3>
@@ -561,7 +577,7 @@ export const BloodBankDashboard: React.FC = () => {
                   <input
                     type="file"
                     accept="application/pdf"
-                    className="w-full max-w-xs text-xs file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-rose-500/10 file:text-rose-500 hover:file:bg-rose-500/20 text-slate-500 focus:outline-none"
+                    className="w-full max-w-xs text-xs file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-[#DDEFF7] file:text-[#10354A] hover:file:bg-brand-default text-slate-500 focus:outline-none"
                     onChange={(e) => {
                       if (e.target.files && e.target.files[0]) {
                         setSelectedFile(e.target.files[0]);
@@ -569,7 +585,7 @@ export const BloodBankDashboard: React.FC = () => {
                     }}
                     required
                   />
-                  <button type="submit" className="bg-rose-500 hover:bg-rose-600 text-white font-bold py-2 px-4 rounded-xl text-xs uppercase tracking-wider flex items-center gap-1.5 disabled:opacity-50" disabled={loading}>
+                  <button type="submit" className="bg-[#10354A] hover:bg-[#1A4B66] text-white font-bold py-2 px-4 rounded-xl text-xs uppercase tracking-wider flex items-center gap-1.5 disabled:opacity-50 dark:bg-brand-default dark:text-brand-dark" disabled={loading}>
                     {loading && <div className="animate-spin rounded-full h-3.5 w-3.5 border-2 border-white/20 border-t-white"></div>}
                     Upload report.pdf
                   </button>
@@ -580,9 +596,9 @@ export const BloodBankDashboard: React.FC = () => {
         )}
 
         {/* Quality Controls and Validation reports desk */}
-        <div className="glass-panel border border-slate-200/50 dark:border-slate-800/40 p-6">
-          <h3 className="text-base font-extrabold text-slate-800 dark:text-slate-200 border-b border-slate-200/50 dark:border-slate-800/50 pb-3 flex items-center gap-1.5">
-            <ShieldCheck className="text-rose-500 w-5 h-5" />
+        <div className="glass-panel p-6">
+          <h3 className="text-base font-extrabold text-brand-dark dark:text-slate-100 border-b border-brand-default/15 dark:border-brand-dark/20 pb-3 flex items-center gap-1.5">
+            <ShieldCheck className="text-brand-dark dark:text-brand-default w-5 h-5" />
             Quality Validation & Labs Desk
           </h3>
 
@@ -593,15 +609,15 @@ export const BloodBankDashboard: React.FC = () => {
                   <th className="pb-3.5 font-bold">Unit ID</th>
                   <th className="pb-3.5 font-bold">Group</th>
                   <th className="pb-3.5 font-bold">Volume</th>
-                  <th className="pb-3.5 font-bold">Donor</th>
-                  <th className="pb-3.5 font-bold">Vitals Status</th>
+                  <th className="pb-3.5 font-bold">Donor ID</th>
+                  <th className="pb-3.5 font-bold">Status</th>
                   <th className="pb-3.5 font-bold text-right">Action Hub</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100/50 dark:divide-slate-900/30 text-xs">
                 {checkedUnits.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="text-center py-8 text-slate-400 dark:text-slate-500 font-bold">
+                    <td colSpan={6} className="text-center py-8 text-slate-405 dark:text-slate-500 font-bold">
                       No checked-in units awaiting validation.
                     </td>
                   </tr>
@@ -610,15 +626,15 @@ export const BloodBankDashboard: React.FC = () => {
                     <tr key={unit.id} className="hover:bg-slate-100/10 dark:hover:bg-slate-900/10 transition-colors">
                       <td className="py-4 font-bold text-slate-400">#{unit.id}</td>
                       <td className="py-4">
-                        <span className="inline-block bg-slate-850 text-white font-extrabold text-xs px-2.5 py-0.5 rounded-lg border border-slate-700">{unit.blood_group}</span>
+                        <span className="inline-block bg-brand-dark text-white font-extrabold text-xs px-2.5 py-0.5 rounded-lg border border-transparent dark:bg-brand-default dark:text-brand-dark">{unit.blood_group}</span>
                       </td>
-                      <td className="py-4 font-bold text-slate-700 dark:text-slate-300">{unit.volume_ml} ml</td>
-                      <td className="py-4 font-bold text-slate-400">Donor #{unit.donor_id}</td>
+                      <td className="py-4 font-bold text-brand-dark dark:text-slate-300">{unit.volume_ml} ml</td>
+                      <td className="py-4 font-bold text-slate-450">Donor #{unit.donor_id}</td>
                       <td className="py-4">
                         <span className={`inline-block px-2 py-0.5 rounded-lg text-[9px] font-bold uppercase ${
                           unit.is_safe 
-                            ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/10' 
-                            : 'bg-rose-500/10 text-rose-600 dark:text-rose-405 border border-rose-500/10'
+                            ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-450 border border-emerald-500/10' 
+                            : 'bg-red-500/10 text-[#FF5E5E] border border-red-500/10'
                         }`}>
                           {unit.is_safe ? 'Safe' : 'Unchecked'}
                         </span>
@@ -629,7 +645,7 @@ export const BloodBankDashboard: React.FC = () => {
                           {!unit.is_safe && (
                             <button
                               onClick={() => validateQuality(unit.id, true)}
-                              className="bg-emerald-550 hover:bg-emerald-600 text-white py-1 px-2.5 rounded-lg flex items-center gap-0.5 transition-all"
+                              className="bg-emerald-500 hover:bg-emerald-650 text-white py-1.5 px-3 rounded-xl flex items-center gap-0.5 transition-all text-[9px] uppercase tracking-wider"
                               title="Mark Safe"
                             >
                               <Check className="w-3.5 h-3.5" />
@@ -644,7 +660,7 @@ export const BloodBankDashboard: React.FC = () => {
                                 setActiveUnitId(unit.id);
                                 setActiveReportId(null);
                               }}
-                              className="bg-rose-500 hover:bg-rose-600 text-white py-1 px-2.5 rounded-lg transition-all"
+                              className="bg-[#10354A] hover:bg-[#1A4B66] text-white py-1.5 px-3 rounded-xl transition-all text-[9px] uppercase tracking-wider dark:bg-brand-default dark:text-brand-dark"
                             >
                               Create Lab Report
                             </button>
@@ -657,7 +673,7 @@ export const BloodBankDashboard: React.FC = () => {
                                 setActiveReportId(unit.validation_report!.id);
                                 setActiveUnitId(null);
                               }}
-                              className="bg-rose-500 hover:bg-rose-600 text-white py-1 px-2.5 rounded-lg transition-all"
+                              className="bg-[#10354A] hover:bg-[#1A4B66] text-white py-1.5 px-3 rounded-xl transition-all text-[9px] uppercase tracking-wider dark:bg-brand-default dark:text-brand-dark"
                             >
                               Upload PDF
                             </button>
@@ -680,10 +696,10 @@ export const BloodBankDashboard: React.FC = () => {
         </div>
 
         {/* Pending Mapped Donations Section */}
-        <div className="glass-panel border border-slate-200/50 dark:border-slate-800/40 p-6">
-          <h3 className="text-base font-extrabold text-slate-800 dark:text-slate-200 border-b border-slate-200/50 dark:border-slate-800/50 pb-3 flex items-center gap-1.5">
-            <Activity className="text-rose-500 w-5 h-5 animate-pulse" />
-            Pending Mapped Donor Donations
+        <div className="glass-panel p-6">
+          <h3 className="text-base font-extrabold text-brand-dark dark:text-slate-100 border-b border-brand-default/15 dark:border-brand-dark/20 pb-3 flex items-center gap-1.5">
+            <Activity className="text-brand-dark dark:text-brand-default w-5 h-5 animate-pulse" />
+            Pending Mapped Donor Appointments
           </h3>
           
           <div className="flex flex-col gap-3.5 mt-4">
@@ -693,15 +709,15 @@ export const BloodBankDashboard: React.FC = () => {
               </div>
             ) : (
               assignedRequests.map(req => (
-                <div key={req.id} className="flex justify-between items-center p-4 border border-rose-500/15 bg-rose-500/5 rounded-2xl">
+                <div key={req.id} className="flex justify-between items-center p-4 border border-[#C7E5F4]/40 bg-brand-light/20 rounded-2xl dark:border-brand-dark/30 dark:bg-brand-dark/10">
                   <div className="flex flex-col gap-0.5 leading-tight">
-                    <span className="font-extrabold text-rose-500 text-sm">
+                    <span className="font-extrabold text-brand-dark dark:text-brand-default text-sm">
                       🩸 {req.blood_group} Mapped Donation
                     </span>
-                    <span className="text-xs text-slate-600 dark:text-slate-350 font-bold mt-1">
-                      Donor: <strong className="text-slate-800 dark:text-slate-100">{req.assigned_donor?.user?.full_name || `Donor #${req.assigned_donor_id}`}</strong>
+                    <span className="text-xs text-slate-650 dark:text-slate-350 font-bold mt-1">
+                      Donor: <strong className="text-brand-dark dark:text-slate-200">{req.assigned_donor?.user?.full_name || `Donor #${req.assigned_donor_id}`}</strong>
                     </span>
-                    <span className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider mt-1">
+                    <span className="text-[10px] text-slate-450 dark:text-slate-500 font-bold uppercase tracking-wider mt-1">
                       Patient: {req.patient?.user?.full_name || 'Patient'} ({req.patient?.hospital_name})
                     </span>
                   </div>
@@ -719,32 +735,32 @@ export const BloodBankDashboard: React.FC = () => {
         </div>
 
         {/* Patient Request Claim Queue */}
-        <div className="glass-panel border border-slate-200/50 dark:border-slate-800/40 p-6">
-          <h3 className="text-base font-extrabold text-slate-800 dark:text-slate-200 border-b border-slate-200/50 dark:border-slate-800/50 pb-3 flex items-center gap-1.5">
-            <Inbox className="text-rose-500 w-5 h-5" />
+        <div className="glass-panel p-6">
+          <h3 className="text-base font-extrabold text-brand-dark dark:text-slate-100 border-b border-brand-default/15 dark:border-brand-dark/20 pb-3 flex items-center gap-1.5">
+            <Inbox className="text-brand-dark dark:text-brand-default w-5 h-5" />
             Patient Request Claim Desk (100 Km Radius)
           </h3>
           
           <div className="flex flex-col gap-3.5 mt-4">
             {nearbyRequests.length === 0 ? (
-              <div className="text-center py-4 text-xs text-slate-450 dark:text-slate-500 font-bold">
+              <div className="text-center py-4 text-xs text-slate-400 dark:text-slate-500 font-bold">
                 No active pending patient requests in your dispatch zone.
               </div>
             ) : (
               nearbyRequests.map(req => (
-                <div key={req.id} className="flex justify-between items-center p-4 border border-rose-500/15 bg-rose-500/5 rounded-2xl">
+                <div key={req.id} className="flex justify-between items-center p-4 border border-brand-default/30 bg-[#F4F8FA] dark:bg-brand-dark/20 dark:border-brand-dark/40 rounded-2xl">
                   <div className="flex flex-col gap-0.5 leading-tight">
-                    <span className="font-extrabold text-rose-500 text-sm">🩸 {req.blood_group} Needed</span>
-                    <span className="text-xs text-slate-600 dark:text-slate-350 font-bold mt-1">
+                    <span className="font-extrabold text-brand-dark dark:text-brand-default text-sm">🩸 {req.blood_group} Needed</span>
+                    <span className="text-xs text-slate-605 dark:text-slate-350 font-bold mt-1">
                       Hospital: {req.patient?.hospital_name || 'Mumbai Hospital'}
                     </span>
-                    <span className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider mt-1">
+                    <span className="text-[10px] text-slate-450 dark:text-slate-500 font-bold uppercase tracking-wider mt-1">
                       Urgency: {req.urgency} | Units: {req.units_required}
                     </span>
                   </div>
                   <button
                     onClick={() => acceptPatientRequest(req.id)}
-                    className="bg-rose-500 hover:bg-rose-600 text-white font-extrabold rounded-xl py-2 px-4 shadow-md text-[10px] uppercase tracking-wider transition-all"
+                    className="bg-[#10354A] hover:bg-[#1A4B66] text-white dark:bg-brand-default dark:text-brand-dark font-extrabold rounded-xl py-2 px-4 shadow-md text-[10px] uppercase tracking-wider transition-all"
                   >
                     Claim Request
                   </button>

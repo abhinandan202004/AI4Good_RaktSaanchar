@@ -11,10 +11,30 @@ import { CoordinatorDashboard } from './pages/CoordinatorDashboard';
 import { ChatRoom } from './pages/ChatRoom';
 import { Leaderboard } from './pages/Leaderboard';
 import { ChatbotWidget } from './components/ChatbotWidget';
+import { useNtfyPush } from './hooks/useNtfyPush';
 
 // Core Layout Wrapper for authenticated routes
 const DashboardLayout: React.FC = () => {
-  const { token, loading } = useAuth();
+  const { user, token, loading } = useAuth();
+
+  // Request browser notification permission on mount if supported
+  React.useEffect(() => {
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      if (Notification.permission === 'default') {
+        Notification.requestPermission();
+      }
+    }
+  }, []);
+
+  // Subscribe to real-time ntfy push notifications
+  useNtfyPush(user?.id, (msg) => {
+    if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+      new Notification(msg.title, {
+        body: msg.message,
+        icon: '/favicon.ico',
+      });
+    }
+  });
 
   if (loading) {
     return (

@@ -1,0 +1,24 @@
+--extra-index-url https://download.pytorch.org/whl/cpu
+fastapi
+uvicorn[standard]
+sqlalchemy
+psycopg2-binary
+python-dotenv
+pydantic-settings
+xgboost
+scikit-learn
+numpy
+pandas
+joblib
+python-jose[cryptography]
+python-multipart
+reportlab
+httpx
+redis
+passlib[bcrypt]
+bcrypt<4.1
+pymupdf==1.26.3
+torch==2.3.1+cpu
+torchvision==0.18.1+cpu
+easyocr==1.7.2
+mistralai==1.9.3

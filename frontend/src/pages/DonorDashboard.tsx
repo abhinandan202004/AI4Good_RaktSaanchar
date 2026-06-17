@@ -4,7 +4,7 @@ import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import { redIcon, greenIcon, blueIcon } from '../utils/leaflet-setup';
 import api from '../services/api';
 import { DonorProfile, BloodRequest, ValidationReport } from '../types';
-import { Heart as HeartIcon, CheckCircle2, ShieldAlert as ShieldIcon, Award as AwardIcon, MapPin as MapIcon, Download as DownloadIcon } from 'lucide-react';
+import { Heart as HeartIcon, CheckCircle2, ShieldAlert as ShieldIcon, Award as AwardIcon, MapPin as MapIcon, Download as DownloadIcon, User as UserIcon } from 'lucide-react';
 
 export const DonorDashboard: React.FC = () => {
   const { donorProfile, refreshProfiles, user } = useAuth();
@@ -212,24 +212,24 @@ export const DonorDashboard: React.FC = () => {
 
   if (!donorProfile) {
     return (
-      <div className="max-w-lg mx-auto glass-panel p-8 mt-10 border border-slate-200/50 dark:border-slate-800/40">
-        <h2 className="text-xl font-black mb-1.5 flex items-center gap-2 text-slate-800 dark:text-slate-100">
-          <HeartIcon className="text-rose-500 w-5.5 h-5.5" />
+      <div className="max-w-lg mx-auto glass-panel p-8 mt-10 border border-brand-default/30 dark:border-brand-dark/40">
+        <h2 className="text-xl font-black mb-1.5 flex items-center gap-2 text-brand-dark dark:text-slate-100">
+          <HeartIcon className="text-brand-dark dark:text-brand-default w-5.5 h-5.5" />
           Setup Donor Profile
         </h2>
         <p className="text-xs text-slate-500 dark:text-slate-400 font-semibold mb-6">
           Register your age, weight, and blood group to start matching with patients.
         </p>
         {error && (
-          <div className="bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 text-xs p-3 rounded-xl font-bold mb-4">
+          <div className="bg-red-500/10 border border-red-500/20 text-[#FF5E5E] text-xs p-3 rounded-xl font-bold mb-4">
             {error}
           </div>
         )}
         <form onSubmit={handleCreateProfile} className="flex flex-col gap-4">
           <div>
-            <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5 font-bold">Blood Group</label>
+            <label className="block text-[10px] font-bold uppercase tracking-wider text-[#2C5E7A] dark:text-[#C7E5F4] mb-1.5">Blood Group</label>
             <select
-              className="w-full bg-white/40 dark:bg-slate-900/30 border border-slate-200 dark:border-slate-800 focus:border-rose-500 dark:focus:border-rose-500 focus:ring-1 focus:ring-rose-500 outline-none rounded-xl px-3 py-2 text-sm text-slate-800 dark:text-slate-100"
+              className="w-full bg-white dark:bg-brand-darkBg border border-brand-default/40 dark:border-brand-dark/50 focus:border-brand-dark focus:ring-1 focus:ring-brand-dark outline-none rounded-xl px-3 py-2 text-sm text-brand-dark dark:text-slate-100"
               value={bloodGroup}
               onChange={(e) => setBloodGroup(e.target.value)}
             >
@@ -240,23 +240,23 @@ export const DonorDashboard: React.FC = () => {
           </div>
           <div className="grid grid-cols-2 gap-3.5">
             <div>
-              <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5 font-bold">Age</label>
+              <label className="block text-[10px] font-bold uppercase tracking-wider text-[#2C5E7A] dark:text-[#C7E5F4] mb-1.5">Age</label>
               <input
                 type="number"
                 min={18}
                 max={65}
-                className="w-full bg-white/40 dark:bg-slate-900/30 border border-slate-200 dark:border-slate-800 focus:border-rose-500 dark:focus:border-rose-500 focus:ring-1 focus:ring-rose-500 outline-none rounded-xl px-3 py-2 text-sm text-slate-800 dark:text-slate-100"
+                className="w-full bg-white dark:bg-brand-darkBg border border-brand-default/40 dark:border-brand-dark/50 focus:border-brand-dark focus:ring-1 focus:ring-brand-dark outline-none rounded-xl px-3 py-2 text-sm text-brand-dark dark:text-slate-100"
                 value={age}
                 onChange={(e) => setAge(parseInt(e.target.value))}
                 required
               />
             </div>
             <div>
-              <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5 font-bold">Weight (kg)</label>
+              <label className="block text-[10px] font-bold uppercase tracking-wider text-[#2C5E7A] dark:text-[#C7E5F4] mb-1.5">Weight (kg)</label>
               <input
                 type="number"
                 min={45}
-                className="w-full bg-white/40 dark:bg-slate-900/30 border border-slate-200 dark:border-slate-800 focus:border-rose-500 dark:focus:border-rose-500 focus:ring-1 focus:ring-rose-500 outline-none rounded-xl px-3 py-2 text-sm text-slate-800 dark:text-slate-100"
+                className="w-full bg-white dark:bg-brand-darkBg border border-brand-default/40 dark:border-brand-dark/50 focus:border-brand-dark focus:ring-1 focus:ring-brand-dark outline-none rounded-xl px-3 py-2 text-sm text-brand-dark dark:text-slate-100"
                 value={weight}
                 onChange={(e) => setWeight(parseFloat(e.target.value))}
                 required
@@ -265,22 +265,22 @@ export const DonorDashboard: React.FC = () => {
           </div>
           <div className="grid grid-cols-2 gap-3.5">
             <div>
-              <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5 font-bold">City</label>
+              <label className="block text-[10px] font-bold uppercase tracking-wider text-[#2C5E7A] dark:text-[#C7E5F4] mb-1.5">City</label>
               <input
                 type="text"
                 placeholder="Navi Mumbai"
-                className="w-full bg-white/40 dark:bg-slate-900/30 border border-slate-200 dark:border-slate-800 focus:border-rose-500 dark:focus:border-rose-500 focus:ring-1 focus:ring-rose-500 outline-none rounded-xl px-3 py-2 text-sm text-slate-800 dark:text-slate-100"
+                className="w-full bg-white dark:bg-brand-darkBg border border-brand-default/40 dark:border-brand-dark/50 focus:border-brand-dark focus:ring-1 focus:ring-brand-dark outline-none rounded-xl px-3 py-2 text-sm text-brand-dark dark:text-slate-100"
                 value={city}
                 onChange={(e) => setCity(e.target.value)}
                 required
               />
             </div>
             <div>
-              <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5 font-bold">State</label>
+              <label className="block text-[10px] font-bold uppercase tracking-wider text-[#2C5E7A] dark:text-[#C7E5F4] mb-1.5">State</label>
               <input
                 type="text"
                 placeholder="Maharashtra"
-                className="w-full bg-white/40 dark:bg-slate-900/30 border border-slate-200 dark:border-slate-800 focus:border-rose-500 dark:focus:border-rose-500 focus:ring-1 focus:ring-rose-500 outline-none rounded-xl px-3 py-2 text-sm text-slate-800 dark:text-slate-100"
+                className="w-full bg-white dark:bg-brand-darkBg border border-brand-default/40 dark:border-brand-dark/50 focus:border-brand-dark focus:ring-1 focus:ring-brand-dark outline-none rounded-xl px-3 py-2 text-sm text-brand-dark dark:text-slate-100"
                 value={state}
                 onChange={(e) => setState(e.target.value)}
                 required
@@ -289,24 +289,24 @@ export const DonorDashboard: React.FC = () => {
           </div>
           <div className="grid grid-cols-2 gap-3.5">
             <div>
-              <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5 font-bold">Latitude</label>
+              <label className="block text-[10px] font-bold uppercase tracking-wider text-[#2C5E7A] dark:text-[#C7E5F4] mb-1.5">Latitude</label>
               <input
                 type="number"
                 step="any"
                 placeholder="19.0330"
-                className="w-full bg-white/40 dark:bg-slate-900/30 border border-slate-200 dark:border-slate-800 focus:border-rose-500 dark:focus:border-rose-500 focus:ring-1 focus:ring-rose-500 outline-none rounded-xl px-3 py-2 text-sm text-slate-800 dark:text-slate-100"
+                className="w-full bg-white dark:bg-brand-darkBg border border-brand-default/40 dark:border-brand-dark/50 focus:border-brand-dark focus:ring-1 focus:ring-brand-dark outline-none rounded-xl px-3 py-2 text-sm text-brand-dark dark:text-slate-100"
                 value={latitude || ''}
                 onChange={(e) => setLatitude(parseFloat(e.target.value))}
                 required
               />
             </div>
             <div>
-              <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5 font-bold">Longitude</label>
+              <label className="block text-[10px] font-bold uppercase tracking-wider text-[#2C5E7A] dark:text-[#C7E5F4] mb-1.5">Longitude</label>
               <input
                 type="number"
                 step="any"
                 placeholder="73.0297"
-                className="w-full bg-white/40 dark:bg-slate-900/30 border border-slate-200 dark:border-slate-800 focus:border-rose-500 dark:focus:border-rose-500 focus:ring-1 focus:ring-rose-500 outline-none rounded-xl px-3 py-2 text-sm text-slate-800 dark:text-slate-100"
+                className="w-full bg-white dark:bg-brand-darkBg border border-brand-default/40 dark:border-brand-dark/50 focus:border-brand-dark focus:ring-1 focus:ring-brand-dark outline-none rounded-xl px-3 py-2 text-sm text-brand-dark dark:text-slate-100"
                 value={longitude || ''}
                 onChange={(e) => setLongitude(parseFloat(e.target.value))}
                 required
@@ -315,7 +315,7 @@ export const DonorDashboard: React.FC = () => {
           </div>
           <button 
             type="submit" 
-            className="w-full bg-rose-500 hover:bg-rose-600 text-white font-bold py-2.5 px-4 rounded-xl shadow-md transition-all text-xs uppercase tracking-wider mt-4" 
+            className="w-full btn-pill-primary mt-4" 
             disabled={loading}
           >
             Save Profile
@@ -337,20 +337,38 @@ export const DonorDashboard: React.FC = () => {
   }).filter(req => req.distance_km === null || req.distance_km <= 100.0); // Within 100 Km radius
 
   return (
-    <div className="max-w-[1600px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6">
+    <div className="max-w-[1600px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6 p-6">
       
-      {/* Sidebar cards (Availability, Stats, Badges) */}
+      {/* Floating Header */}
+      <div className="lg:col-span-12 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-transparent py-2 border-b border-brand-default/20 dark:border-brand-dark/20 mb-2">
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 rounded-full bg-brand-light text-brand-dark border border-brand-default flex items-center justify-center font-black text-lg uppercase dark:bg-brand-dark dark:text-brand-light">
+            {user?.full_name[0]}
+          </div>
+          <div>
+            <span className="block text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Welcome back,</span>
+            <h2 className="text-xl font-black text-brand-dark dark:text-white leading-tight mt-0.5">{user?.full_name}</h2>
+          </div>
+        </div>
+        <div className="text-right flex items-center gap-2">
+          <span className="inline-block bg-brand-dark text-white font-extrabold text-xs px-3 py-1 rounded-full dark:bg-brand-default dark:text-brand-dark border border-transparent">
+            Blood Group: {donorProfile.blood_group}
+          </span>
+        </div>
+      </div>
+
+      {/* LEFT COLUMN: Sidebar cards (Availability, Stats, Badges) */}
       <div className="flex flex-col gap-6 lg:col-span-4">
         
         {/* Availability Toggle card */}
-        <div className={`glass-panel border p-6 flex flex-row justify-between items-center transition-all duration-300 ${donorProfile.is_available ? 'bg-emerald-500/5 border-emerald-500/20' : 'border-slate-200/50 dark:border-slate-800/40'}`}>
+        <div className={`glass-panel p-6 flex flex-row justify-between items-center transition-all duration-300 ${donorProfile.is_available ? 'bg-emerald-50/50 border-emerald-500/30 dark:bg-emerald-950/15 dark:border-emerald-500/20' : 'border-brand-default/35 dark:border-brand-dark/40'}`}>
           <div>
-            <h3 className="font-extrabold text-sm flex items-center gap-1.5 text-slate-800 dark:text-slate-200">
-              <HeartIcon className="text-rose-500 w-4.5 h-4.5 fill-rose-500" />
+            <h3 className="font-extrabold text-sm flex items-center gap-1.5 text-brand-dark dark:text-slate-200">
+              <HeartIcon className="text-brand-dark dark:text-brand-default w-4.5 h-4.5 fill-brand-dark/20" />
               Donor Status
             </h3>
             <p className="text-[10px] text-slate-400 dark:text-slate-500 font-bold mt-1 leading-normal">
-              {donorProfile.is_available ? 'You are active & visible for requests' : 'You are currently offline'}
+              {donorProfile.is_available ? 'Active & visible for dispatch' : 'Offline'}
             </p>
           </div>
           <button
@@ -358,7 +376,7 @@ export const DonorDashboard: React.FC = () => {
             className={`w-10 h-10 flex items-center justify-center rounded-xl border transition-all ${
               donorProfile.is_available 
                 ? 'bg-emerald-500 text-white border-transparent shadow-md hover:bg-emerald-600' 
-                : 'bg-white/40 dark:bg-slate-900/10 border-slate-200 dark:border-slate-850 text-slate-400'
+                : 'bg-white dark:bg-brand-darkBg border-brand-default/40 dark:border-brand-dark/40 text-slate-400'
             }`}
             title="Toggle Availability"
             disabled={toggling}
@@ -368,38 +386,38 @@ export const DonorDashboard: React.FC = () => {
         </div>
 
         {/* Stats card */}
-        <div className="glass-panel border border-slate-200/50 dark:border-slate-800/40 p-6">
-          <h3 className="text-[10px] font-black border-b border-slate-200/40 dark:border-slate-800/40 pb-3 uppercase tracking-wider text-slate-400">
-            Your Stats
+        <div className="glass-panel p-6">
+          <h3 className="text-[10px] font-black border-b border-brand-default/20 dark:border-brand-dark/20 pb-3 uppercase tracking-wider text-slate-400">
+            Donor Performance Stats
           </h3>
           <div className="flex flex-col gap-4.5 mt-4 text-xs font-semibold">
             <div className="flex justify-between items-center">
               <span className="text-slate-500 dark:text-slate-400">Reliability Score</span>
-              <span className="font-black text-rose-500 text-base">{(donorProfile.reliability_score * 100).toFixed(0)}%</span>
+              <span className="font-black text-brand-dark dark:text-brand-default text-base">{(donorProfile.reliability_score * 100).toFixed(0)}%</span>
             </div>
-            <div className="h-[1px] bg-slate-200/50 dark:bg-slate-800/30"></div>
+            <div className="h-[1px] bg-brand-default/20 dark:bg-brand-dark/20"></div>
             <div className="flex justify-between items-center">
               <span className="text-slate-500 dark:text-slate-400">Response Rate</span>
-              <span className="font-black text-rose-500 text-base">{(donorProfile.response_rate * 100).toFixed(0)}%</span>
+              <span className="font-black text-brand-dark dark:text-brand-default text-base">{(donorProfile.response_rate * 100).toFixed(0)}%</span>
             </div>
-            <div className="h-[1px] bg-slate-200/50 dark:bg-slate-800/30"></div>
+            <div className="h-[1px] bg-brand-default/20 dark:bg-brand-dark/20"></div>
             <div className="flex justify-between items-center">
               <span className="text-slate-500 dark:text-slate-400">Completed Donations</span>
-              <span className="font-black text-rose-500 text-base">{donorProfile.total_donations}</span>
+              <span className="font-black text-brand-dark dark:text-brand-default text-base">{donorProfile.total_donations}</span>
             </div>
-            <div className="h-[1px] bg-slate-200/50 dark:bg-slate-800/30"></div>
+            <div className="h-[1px] bg-brand-default/20 dark:bg-brand-dark/20"></div>
             <div className="flex justify-between items-center">
               <span className="text-slate-500 dark:text-slate-400">Donation Points</span>
-              <span className="font-black text-rose-500 text-base">{donorProfile.points || 0} pts</span>
+              <span className="font-black text-[#2C5E7A] dark:text-brand-default text-base">{donorProfile.points || 0} pts</span>
             </div>
           </div>
         </div>
 
         {/* Gamification/Badges card */}
-        <div className="glass-panel border border-slate-200/50 dark:border-slate-800/40 p-6">
-          <h3 className="text-sm font-extrabold border-b border-slate-200/40 dark:border-slate-800/40 pb-3 flex items-center gap-1.5 text-slate-800 dark:text-slate-100">
+        <div className="glass-panel p-6">
+          <h3 className="text-sm font-extrabold border-b border-brand-default/20 dark:border-brand-dark/20 pb-3 flex items-center gap-1.5 text-brand-dark dark:text-slate-100">
             <AwardIcon className="text-amber-500 w-4.5 h-4.5" />
-            Achievements
+            Achievements Badges
           </h3>
           {donorProfile.total_donations === 0 ? (
             <p className="text-[10px] text-slate-400 dark:text-slate-500 font-bold py-6 text-center leading-normal">
@@ -407,12 +425,12 @@ export const DonorDashboard: React.FC = () => {
             </p>
           ) : (
             <div className="grid grid-cols-2 gap-3 mt-3">
-              <div className="flex flex-col items-center p-3 border border-slate-200/30 dark:border-slate-800/30 rounded-xl bg-slate-100/30 dark:bg-slate-900/10">
+              <div className="flex flex-col items-center p-3 border border-brand-default/20 dark:border-brand-dark/30 rounded-xl bg-brand-light/10 dark:bg-brand-dark/10">
                 <span className="text-2xl">🩸</span>
                 <span className="font-bold text-[10px] mt-1 text-center text-slate-600 dark:text-slate-350">First Donation</span>
               </div>
               {donorProfile.total_donations >= 5 && (
-                <div className="flex flex-col items-center p-3 border border-slate-200/30 dark:border-slate-800/30 rounded-xl bg-slate-100/30 dark:bg-slate-900/10">
+                <div className="flex flex-col items-center p-3 border border-brand-default/20 dark:border-brand-dark/30 rounded-xl bg-brand-light/10 dark:bg-brand-dark/10">
                   <span className="text-2xl">🏆</span>
                   <span className="font-bold text-[10px] mt-1 text-center text-slate-600 dark:text-slate-350">Lifesaver</span>
                 </div>
@@ -422,12 +440,12 @@ export const DonorDashboard: React.FC = () => {
         </div>
 
         {/* Dev Location Desk */}
-        <div className="glass-panel border border-rose-500/10 bg-rose-500/5 p-6">
-          <h3 className="text-sm font-extrabold border-b border-rose-500/10 pb-3 flex items-center gap-1.5 text-rose-500 dark:text-rose-400">
+        <div className="glass-panel border border-brand-default/30 bg-brand-light/10 p-6 dark:bg-brand-dark/5 dark:border-brand-dark/40">
+          <h3 className="text-sm font-extrabold border-b border-brand-default/20 pb-3 flex items-center gap-1.5 text-brand-dark dark:text-brand-default">
             <MapIcon className="w-4.5 h-4.5 animate-bounce" />
             Dev Location Desk
           </h3>
-          <p className="text-[10px] text-slate-500 dark:text-slate-400 font-bold mb-3 mt-1.5 leading-normal">
+          <p className="text-[10px] text-slate-405 dark:text-slate-500 font-bold mb-3 mt-1.5 leading-normal">
             Update coordinates to simulate distance checks.
           </p>
           <div className="flex flex-col gap-2.5 text-xs">
@@ -437,7 +455,7 @@ export const DonorDashboard: React.FC = () => {
                 <input
                   type="number"
                   step="any"
-                  className="w-full bg-white/40 dark:bg-slate-900/30 border border-slate-200/60 dark:border-slate-800 focus:border-rose-500 dark:focus:border-rose-500 outline-none rounded-lg px-2.5 py-1.5 text-[11px] font-bold text-slate-800 dark:text-slate-100"
+                  className="w-full bg-white dark:bg-brand-darkBg border border-brand-default/45 dark:border-brand-dark/50 focus:border-brand-dark outline-none rounded-lg px-2.5 py-1.5 text-[11px] font-bold text-brand-dark dark:text-slate-100"
                   value={latVal ?? ''}
                   onChange={(e) => setLatVal(parseFloat(e.target.value))}
                 />
@@ -447,7 +465,7 @@ export const DonorDashboard: React.FC = () => {
                 <input
                   type="number"
                   step="any"
-                  className="w-full bg-white/40 dark:bg-slate-900/30 border border-slate-200/60 dark:border-slate-800 focus:border-rose-500 dark:focus:border-rose-500 outline-none rounded-lg px-2.5 py-1.5 text-[11px] font-bold text-slate-800 dark:text-slate-100"
+                  className="w-full bg-white dark:bg-brand-darkBg border border-brand-default/45 dark:border-brand-dark/50 focus:border-brand-dark outline-none rounded-lg px-2.5 py-1.5 text-[11px] font-bold text-brand-dark dark:text-slate-100"
                   value={lonVal ?? ''}
                   onChange={(e) => setLonVal(parseFloat(e.target.value))}
                 />
@@ -457,7 +475,7 @@ export const DonorDashboard: React.FC = () => {
             <button
               type="button"
               onClick={saveLocation}
-              className="bg-rose-500 hover:bg-rose-600 text-white font-bold py-1.5 rounded-lg transition-all text-[10px] uppercase tracking-wider mt-2.5"
+              className="bg-brand-dark hover:bg-brand-dark/90 text-white font-bold py-1.5 rounded-lg transition-all text-[10px] uppercase tracking-wider mt-2.5 dark:bg-brand-default dark:text-brand-dark"
               disabled={loading}
             >
               Save Location
@@ -470,7 +488,7 @@ export const DonorDashboard: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => teleportTo(teleportTarget.patient?.latitude, teleportTarget.patient?.longitude)}
-                    className="border border-rose-500/25 bg-rose-500/5 hover:bg-rose-500/10 text-rose-500 dark:text-rose-450 font-bold py-1.5 rounded-lg transition-all text-[9px] uppercase tracking-wider mt-1"
+                    className="border border-brand-default/40 bg-white/50 hover:bg-brand-light text-brand-dark font-bold py-1.5 rounded-lg transition-all text-[9px] uppercase tracking-wider mt-1 dark:bg-brand-dark dark:text-brand-light dark:border-brand-dark/30"
                     disabled={loading}
                   >
                     Teleport to #{teleportTarget.id} ({teleportTarget.patient?.city})
@@ -484,21 +502,22 @@ export const DonorDashboard: React.FC = () => {
 
       </div>
 
-      {/* Main Panel Content (Map, Urgent Alerts, Reports) */}
+      {/* RIGHT COLUMN: Main Panel Content (Map, Urgent Alerts, Reports) */}
       <div className="flex flex-col gap-6 lg:col-span-8">
+        
         {isFlagged && latestReport && (
-          <div className="bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-450 p-5 rounded-2xl flex items-start gap-3 shadow-sm">
-            <ShieldIcon className="w-6 h-6 text-rose-500 shrink-0 mt-0.5" />
+          <div className="bg-red-500/10 border border-red-500/20 text-[#FF5E5E] p-5 rounded-2xl flex items-start gap-3 shadow-sm">
+            <ShieldIcon className="w-6 h-6 text-[#FF5E5E] shrink-0 mt-0.5" />
             <div className="flex flex-col gap-1 text-xs">
-              <strong className="font-black text-sm text-rose-700 dark:text-rose-400">⚠️ Account Deactivated: Lab Health Flag Alert</strong>
+              <strong className="font-black text-sm text-[#FF5E5E]">⚠️ Account Deactivated: Lab Health Flag Alert</strong>
               <p className="font-bold leading-normal mt-0.5">
                 Your profile availability has been paused because your latest blood unit validation report was flagged by the lab.
               </p>
-              <div className="mt-3 p-3.5 bg-white/40 dark:bg-slate-900/40 rounded-xl border border-rose-500/15">
-                <div className="font-bold text-slate-700 dark:text-slate-300">Category: <span className="font-black text-rose-500">{latestReport.issue_category}</span></div>
-                <div className="font-semibold mt-1 text-slate-600 dark:text-slate-350">Feedback Notes: {latestReport.feedback_notes || 'No notes provided.'}</div>
+              <div className="mt-3 p-3.5 bg-white/40 dark:bg-slate-900/40 rounded-xl border border-red-500/15">
+                <div className="font-bold text-slate-700 dark:text-slate-350">Category: <span className="font-black text-[#FF5E5E]">{latestReport.issue_category}</span></div>
+                <div className="font-semibold mt-1 text-slate-650 dark:text-slate-400">Feedback Notes: {latestReport.feedback_notes || 'No notes provided.'}</div>
                 {latestReport.improvement_recommendations && (
-                  <div className="font-semibold mt-1.5 text-emerald-600 dark:text-emerald-400">Recommendation: {latestReport.improvement_recommendations}</div>
+                  <div className="font-semibold mt-1.5 text-emerald-600 dark:text-emerald-400 font-bold">Recommendation: {latestReport.improvement_recommendations}</div>
                 )}
               </div>
             </div>
@@ -506,7 +525,7 @@ export const DonorDashboard: React.FC = () => {
         )}
 
         {isOnCooldown && (
-          <div className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 p-5 rounded-2xl flex items-start gap-3 shadow-sm">
+          <div className="bg-emerald-50/60 border border-emerald-500/20 text-emerald-700 p-5 rounded-2xl flex items-start gap-3 shadow-sm dark:bg-emerald-950/10 dark:text-emerald-400">
             <CheckCircle2 className="w-6 h-6 text-emerald-500 shrink-0 mt-0.5" />
             <div className="flex flex-col gap-1 text-xs font-semibold">
               <strong className="font-black text-sm text-emerald-700 dark:text-emerald-350">⏳ Rest & Recovery Cooldown Active</strong>
@@ -521,7 +540,7 @@ export const DonorDashboard: React.FC = () => {
         )}
 
         {error && (
-          <div className="bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 text-xs p-3 rounded-xl font-bold">
+          <div className="bg-red-500/10 border border-red-500/20 text-[#FF5E5E] text-xs p-3 rounded-xl font-bold">
             {error}
           </div>
         )}
@@ -532,18 +551,18 @@ export const DonorDashboard: React.FC = () => {
         )}
 
         {/* Leaflet Radius Map & Urgent Requests Card */}
-        <div className="glass-panel border border-slate-200/50 dark:border-slate-800/40 overflow-hidden">
+        <div className="glass-panel overflow-hidden border-brand-default/35">
           <div className="p-6 pb-0">
-            <h3 className="text-base font-extrabold text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
-              <ShieldIcon className="text-rose-500 w-4.5 h-4.5 animate-pulse" />
-              100 Km Radius Urgent Radar
+            <h3 className="text-base font-extrabold text-brand-dark dark:text-slate-100 flex items-center gap-1.5">
+              <ShieldIcon className="text-brand-dark dark:text-brand-default w-4.5 h-4.5 animate-pulse" />
+              100 Km Radius Urgent Radar Map
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 font-semibold mt-1">
               Live broadcast alerts within 100 Km. Click marker or accept directly below.
             </p>
           </div>
 
-          <div className="h-80 w-full mt-4 border-y border-slate-200/50 dark:border-slate-800/40 z-10">
+          <div className="h-80 w-full mt-4 border-y border-brand-default/20 dark:border-brand-dark/20 z-10">
             {donorProfile.latitude && donorProfile.longitude ? (
               <MapContainer
                 center={[donorProfile.latitude, donorProfile.longitude]}
@@ -566,13 +585,13 @@ export const DonorDashboard: React.FC = () => {
                     return (
                       <Marker key={req.id} position={[req.patient.latitude, req.patient.longitude]} icon={redIcon}>
                         <Popup>
-                          <div className="p-2 flex flex-col gap-1 text-xs max-w-[200px]">
-                            <div className="font-black text-rose-500 uppercase">🚨 Critical Need ({req.blood_group})</div>
-                            <div className="h-[1px] bg-slate-100 my-1"></div>
-                            <div className="text-slate-500 font-medium">Hospital: <strong className="text-slate-700">{req.patient.hospital_name}</strong></div>
-                            <div className="text-slate-500 font-medium">Distance: <strong className="text-slate-700">{req.distance_km?.toFixed(1)} km</strong></div>
+                          <div className="p-2 flex flex-col gap-1 text-xs max-w-[200px] leading-normal font-semibold">
+                            <div className="font-black text-[#FF5E5E] uppercase">🚨 Urgent Needed ({req.blood_group})</div>
+                            <div className="h-[1px] bg-slate-150 my-1"></div>
+                            <div className="text-slate-505">Hospital: <strong className="text-slate-705">{req.patient.hospital_name}</strong></div>
+                            <div className="text-slate-505">Distance: <strong className="text-slate-705">{req.distance_km?.toFixed(1)} km</strong></div>
                             {isFlagged ? (
-                              <div className="text-rose-500 font-bold text-center mt-2.5 text-[10px] uppercase tracking-wider">Deactivated (Health Flag)</div>
+                              <div className="text-[#FF5E5E] font-bold text-center mt-2.5 text-[10px] uppercase tracking-wider">Deactivated (Health Flag)</div>
                             ) : isOnCooldown ? (
                               <div className="text-emerald-500 font-bold text-center mt-2.5 text-[10px] uppercase tracking-wider">Resting (Cooldown)</div>
                             ) : hasActiveAssignment ? (
@@ -580,9 +599,9 @@ export const DonorDashboard: React.FC = () => {
                             ) : (
                               <button
                                 onClick={() => acceptRequest(req.id)}
-                                className="bg-rose-500 hover:bg-rose-650 text-white font-extrabold rounded-lg mt-3.5 py-1.5 w-full text-[10px] uppercase tracking-wider transition-all"
+                                className="bg-brand-dark text-white font-extrabold rounded-lg mt-3.5 py-1.5 w-full text-[10px] uppercase tracking-wider transition-all dark:bg-brand-default dark:text-brand-dark"
                               >
-                                Accept Direct Donation
+                                Accept Donation
                               </button>
                             )}
                           </div>
@@ -601,12 +620,12 @@ export const DonorDashboard: React.FC = () => {
           </div>
 
           <div className="p-6">
-            <h4 className="text-[10px] font-black uppercase tracking-wider text-slate-400 border-b border-slate-200/40 dark:border-slate-800/40 pb-2.5 mb-3.5">
+            <h4 className="text-[10px] font-black uppercase tracking-wider text-slate-400 border-b border-brand-default/20 dark:border-brand-dark/20 pb-2.5 mb-3.5">
               Broadcast Alert Queue
             </h4>
             <div className="flex flex-col gap-3">
               {isFlagged ? (
-                <div className="text-center py-6 text-xs text-rose-500 font-bold">
+                <div className="text-center py-6 text-xs text-[#FF5E5E] font-bold">
                   ⚠️ Your matching alerts radar is paused while your profile is deactivated.
                 </div>
               ) : isOnCooldown ? (
@@ -618,28 +637,28 @@ export const DonorDashboard: React.FC = () => {
                   🚕 You currently have an active donation assignment. Please fulfill it before accepting new requests.
                 </div>
               ) : enrichedAlerts.length === 0 ? (
-                <div className="text-center py-6 text-xs text-slate-400 dark:text-slate-500 font-bold">
+                <div className="text-center py-6 text-xs text-slate-450 dark:text-slate-500 font-semibold">
                   No active urgent alerts within 100 Km radius.
                 </div>
               ) : (
                 enrichedAlerts.map(req => (
-                  <div key={req.id} className="flex justify-between items-center p-4 border border-rose-500/15 bg-rose-500/5 rounded-2xl">
+                  <div key={req.id} className="flex justify-between items-center p-4 border border-[#FF5E5E]/15 bg-[#FF5E5E]/5 rounded-2xl">
                     <div className="flex flex-col gap-0.5 leading-tight">
-                      <span className="font-extrabold text-rose-500 flex items-center gap-1 text-sm">
+                      <span className="font-extrabold text-[#FF5E5E] flex items-center gap-1 text-sm">
                         🚨 {req.blood_group} Requested
                       </span>
-                      <span className="text-xs text-slate-600 dark:text-slate-350 font-bold mt-1">
+                      <span className="text-xs text-slate-650 dark:text-slate-350 font-bold mt-1">
                         Hospital: {req.patient?.hospital_name || 'Local Hospital'}
                       </span>
-                      <span className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider flex items-center gap-1 mt-1">
-                        <MapIcon className="w-3.5 h-3.5 text-rose-500" />
+                      <span className="text-[10px] text-slate-405 dark:text-slate-500 font-bold uppercase tracking-wider flex items-center gap-1 mt-1">
+                        <MapIcon className="w-3.5 h-3.5 text-[#FF5E5E]" />
                         {req.distance_km?.toFixed(1)} km away
                       </span>
                     </div>
                     <button
                       onClick={() => acceptRequest(req.id)}
                       disabled={isFlagged || isOnCooldown || hasActiveAssignment}
-                      className="bg-rose-500 hover:bg-rose-650 disabled:opacity-50 disabled:cursor-not-allowed text-white font-extrabold rounded-xl py-2 px-4 shadow-md text-[10px] uppercase tracking-wider transition-all"
+                      className="bg-brand-dark text-white dark:bg-brand-default dark:text-brand-dark hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed font-extrabold rounded-xl py-2 px-4 shadow-sm text-[10px] uppercase tracking-wider transition-all"
                     >
                       Accept
                     </button>
@@ -651,8 +670,8 @@ export const DonorDashboard: React.FC = () => {
         </div>
 
         {/* Validation Reports Card */}
-        <div className="glass-panel border border-slate-200/50 dark:border-slate-800/40 p-6">
-          <h3 className="text-base font-extrabold text-slate-800 dark:text-slate-100 border-b border-slate-200/50 dark:border-slate-800/50 pb-3">
+        <div className="glass-panel p-6">
+          <h3 className="text-base font-extrabold text-brand-dark dark:text-slate-100 border-b border-brand-default/20 dark:border-brand-dark/20 pb-3">
             Validation & Lab Health Reports
           </h3>
           
@@ -670,7 +689,7 @@ export const DonorDashboard: React.FC = () => {
               <tbody className="divide-y divide-slate-100/50 dark:divide-slate-900/30 text-xs">
                 {reports.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="text-center py-6 text-slate-400 dark:text-slate-500 font-bold">
+                    <td colSpan={5} className="text-center py-6 text-slate-400 dark:text-slate-500 font-semibold">
                       No lab reports registered yet.
                     </td>
                   </tr>
@@ -678,15 +697,15 @@ export const DonorDashboard: React.FC = () => {
                   reports.map(rep => (
                     <tr key={rep.id} className="hover:bg-slate-100/10 dark:hover:bg-slate-900/10 transition-colors">
                       <td className="py-4 font-bold text-slate-400">#{rep.id}</td>
-                      <td className="py-4 font-bold text-slate-700 dark:text-slate-300">{rep.hemoglobin_g_dl} g/dL</td>
-                      <td className="py-4 text-slate-500 dark:text-slate-400 font-semibold">
+                      <td className="py-4 font-black text-brand-dark dark:text-brand-default">{rep.hemoglobin_g_dl} g/dL</td>
+                      <td className="py-4 text-slate-500 dark:text-slate-450 font-bold">
                         {rep.systolic_bp}/{rep.diastolic_bp} mmHg, {rep.pulse_bpm} bpm
                       </td>
                       <td className="py-4">
                         <span className={`inline-block px-2 py-0.5 rounded-lg text-[9px] font-bold uppercase ${
                           rep.status === 'approved' 
-                            ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/10' 
-                            : 'bg-rose-500/10 text-rose-600 dark:text-rose-450 border border-rose-500/10'
+                            ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-450 border border-emerald-500/10' 
+                            : 'bg-red-500/10 text-[#FF5E5E] border border-red-500/10'
                         }`}>
                           {rep.status}
                         </span>
@@ -694,7 +713,7 @@ export const DonorDashboard: React.FC = () => {
                       <td className="py-4 text-right">
                         <button
                           onClick={() => downloadReportPdf(rep.id, `report_${rep.id}.pdf`)}
-                          className="bg-rose-500 hover:bg-rose-600 text-white py-1 px-3 rounded-lg font-bold flex items-center gap-1.5 transition-all text-[10px] ml-auto"
+                          className="bg-brand-dark hover:bg-brand-dark/95 text-white py-1.5 px-3.5 rounded-xl font-bold flex items-center gap-1.5 transition-all text-[10px] ml-auto dark:bg-brand-default dark:text-brand-dark"
                         >
                           <DownloadIcon className="w-3.5 h-3.5" />
                           PDF
