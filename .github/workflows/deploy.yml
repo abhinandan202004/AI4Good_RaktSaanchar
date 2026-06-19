@@ -76,6 +76,13 @@ jobs:
             echo "Pruning unused Docker images..."
             docker image prune -f
 
+            # CRITICAL: Restart the Nginx gateway so it re-discovers the new
+            # internal IPs of any recreated containers. Without this, the gateway
+            # caches old IPs from startup and returns 502 until manually restarted.
+            echo "Restarting gateway to re-resolve service IPs post-deploy..."
+            sleep 10
+            docker compose -f docker-compose.yml -f docker-compose.prod.yml restart gateway
+
             echo "Deployment completed successfully! Running gateway healthcheck..."
             sleep 5
             curl -f http://localhost/health || {
