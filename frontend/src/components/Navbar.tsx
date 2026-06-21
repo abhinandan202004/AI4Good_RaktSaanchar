@@ -84,8 +84,27 @@ export const Navbar: React.FC = () => {
     <header className="glass-nav border-b sticky top-0 z-50 px-6 py-3.5 flex items-center justify-between">
       {/* Brand */}
       <div className="flex items-center gap-2.5">
-        <div className="p-2 bg-brand-light dark:bg-brand-dark/30 rounded-xl border border-brand-default/40">
-          <Droplet className="text-brand-dark dark:text-brand-default w-5 h-5 animate-pulse fill-brand-default/30" />
+        <div className="p-1.5 bg-brand-light dark:bg-brand-dark/30 rounded-xl border border-brand-default/40 flex items-center justify-center">
+          <svg className="w-6 h-6 animate-pulse" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="dropGrad" x1="15%" y1="15%" x2="85%" y2="85%">
+                <stop offset="0%" stopColor="#FF4D4D" />
+                <stop offset="50%" stopColor="#E51B23" />
+                <stop offset="100%" stopColor="#9C0A0F" />
+              </linearGradient>
+              <linearGradient id="pulseGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.4" />
+                <stop offset="50%" stopColor="#FFFFFF" stopOpacity="1" />
+                <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0.4" />
+              </linearGradient>
+              <filter id="glowFilter" x="-20%" y="-20%" width="140%" height="140%">
+                <feGaussianBlur stdDeviation="2" result="blur" />
+                <feComposite in="SourceGraphic" in2="blur" operator="over" />
+              </filter>
+            </defs>
+            <path d="M50 8 C50 8 18 46 18 70 A 32 32 0 0 0 82 70 C 82 46 50 8 50 8 Z" fill="url(#dropGrad)" />
+            <path d="M25 70 L39 70 L44 58 L50 80 L56 64 L61 70 L75 70" stroke="url(#pulseGrad)" strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round" filter="url(#glowFilter)" />
+          </svg>
         </div>
         <span className="text-lg font-black tracking-tight text-brand-dark dark:text-white">
           Rakta<span className="hero-highlight-token">Sanchaar</span>
