@@ -242,7 +242,7 @@ Add the following secrets:
 | `SMTP_PASS` | `xxxx-xxxx-xxxx-xxxx` | Gmail App Password |
 | `MISTRAL_API_KEY`| `mistral-key` | AI Chatbot key |
 | `SARVAM_API_KEY` | `sarvam-key` | Translation service key |
-| `SERVER_IP` | `129.153.xx.xx` | Same as `ORACLE_HOST` (used for Vite build args) |
+| `SERVER_IP` | `raktsaanchar.duckdns.org` | Your domain name (or public IP for HTTP) — used for Vite API build arguments (must be the domain name for HTTPS) |
 
 ### 9b — Test the Automation
 1. Make a small code change (or edit `README.md`).
@@ -254,6 +254,53 @@ Add the following secrets:
    ```
 3. Go to the **Actions** tab on your GitHub repository. You should see the **Production Deployment** run starting.
 4. Once completed, the runner will have successfully SSH'd into the VM, updated the code, written the `.env` file, built/started the services, and cleaned up unused Docker cache images!
+
+---
+
+## Step 10 — Transitioning to HTTPS (SSL/TLS)
+
+To enable secure HTTPS and WSS (secure WebSockets), you need to get a domain name pointed to your server IP, obtain a Let's Encrypt certificate, and update the repository configurations.
+
+### 10a — Prerequisites
+1. **Domain Name**: Get a free subdomain at [DuckDNS](https://www.duckdns.org) (e.g., `raktsaanchar.duckdns.org`) or use a custom domain. Point the DNS A record to your VM's public IP (`140.238.229.46`).
+2. **Oracle Ingress Rule**: Ensure port `443` is allowed in your Oracle Virtual Cloud Network (VCN) ingress security list (detailed in Step 3a).
+3. **OS-Level Firewall**: Ensure port `443` is open in the OS-level iptables (detailed in Step 3b).
+
+### 10b — Obtain Let's Encrypt SSL Certificate
+Run the following commands on your Oracle VM terminal:
+
+```bash
+# 1. Stop the Nginx gateway container to free up port 80
+docker compose -f docker-compose.yml -f docker-compose.prod.yml stop gateway
+
+# 2. Install certbot on the VM
+sudo apt-get update
+sudo apt-get install -y certbot
+
+# 3. Request the certificate using standalone challenge (replace with your domain)
+sudo certbot certonly --standalone -d <YOUR_DOMAIN>
+
+# 4. Verify certificates were generated successfully
+# They should be at: /etc/letsencrypt/live/<YOUR_DOMAIN>/
+sudo ls -l /etc/letsencrypt/live/<YOUR_DOMAIN>/
+```
+
+### 10c — Configure and Restart the Stack
+1. **Configure Nginx**: Locally or on the server, open `infra/nginx.prod.conf` and replace `YOUR_DOMAIN_HERE` with your actual domain name (e.g. `raktsaanchar.duckdns.org`):
+   ```bash
+   # On the server or locally before pushing:
+   sed -i 's/YOUR_DOMAIN_HERE/<YOUR_DOMAIN>/g' infra/nginx.prod.conf
+   ```
+2. **Update GitHub Secrets**:
+   - Go to your GitHub repo ➔ **Settings** ➔ **Secrets and variables** ➔ **Actions**.
+   - Edit the secret `SERVER_IP` and replace the numeric IP address with your new domain name (e.g., `raktsaanchar.duckdns.org`).
+3. **Push to deploy**:
+   - Commit and push your changes to GitHub `main` branch. GitHub Actions will build the frontend container referencing the new `https://` API address, mount the host certificates directory into Nginx, and restart the gateway on ports `80` and `443`.
+   ```bash
+   git add .
+   git commit -m "Enable HTTPS support"
+   git push origin main
+   ```
 
 ---
 

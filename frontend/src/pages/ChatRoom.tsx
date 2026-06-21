@@ -95,7 +95,8 @@ export const ChatRoom: React.FC = () => {
     fetchHistory();
 
     // Connect WebSocket
-    const wsBase = import.meta.env.VITE_WS_URL || `ws://${window.location.host}/api/v1/chat/ws`;
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsBase = import.meta.env.VITE_WS_URL || `${protocol}//${window.location.host}/api/v1/chat/ws`;
     // If wsBase already ends with /chat/ws or similar, concatenate cleanly
     const wsUrl = `${wsBase}/${activeRoom.id}?token=${token}`;
     const ws = new WebSocket(wsUrl);

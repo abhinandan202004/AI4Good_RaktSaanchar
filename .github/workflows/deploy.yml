@@ -85,7 +85,7 @@ jobs:
 
             echo "Deployment completed successfully! Running gateway healthcheck..."
             sleep 5
-            curl -f http://localhost/health || {
+            curl -f -k https://localhost/health || {
               echo "Warning: Healthcheck failed! Checking Docker service statuses."
               docker compose ps
               exit 1

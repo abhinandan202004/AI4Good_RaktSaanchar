@@ -20,8 +20,8 @@ services:
       context: ./frontend
       dockerfile: Dockerfile.prod
       args:
-        VITE_API_BASE_URL: "http://${SERVER_IP}/api/v1"
-        VITE_WS_URL: "ws://${SERVER_IP}/api/v1/chat/ws"
+        VITE_API_BASE_URL: "https://${SERVER_IP}/api/v1"
+        VITE_WS_URL: "wss://${SERVER_IP}/api/v1/chat/ws"
         VITE_NTFY_BASE_URL: "${NTFY_BASE_URL:-https://ntfy.sh}"
         VITE_NTFY_TOPIC_PREFIX: "${NTFY_TOPIC_PREFIX:-raktsaanchar}"
     image: raktsaanchar-frontend:prod
@@ -36,8 +36,12 @@ services:
   # ── Gateway: use production nginx config that serves the frontend ──────────
   gateway:
     restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
     volumes:
       - ./infra/nginx.prod.conf:/etc/nginx/nginx.conf:ro
+      - /etc/letsencrypt:/etc/letsencrypt:ro
     mem_limit: 30m
 
   # ── Database ───────────────────────────────────────────────────────────────
