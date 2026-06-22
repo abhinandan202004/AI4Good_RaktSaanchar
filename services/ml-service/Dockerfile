@@ -3,7 +3,8 @@ FROM python:3.12-slim
 WORKDIR /app
 
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# Install 'uv' for 10x-100x faster package installation to prevent Hugging Face timeouts
+RUN pip install uv && uv pip install --system --no-cache-dir -r requirements.txt
 
 COPY app/ ./app/
 COPY models/ ./models/
