@@ -29,20 +29,23 @@ jobs:
           RABBITMQ_USER: ${{ secrets.RABBITMQ_USER }}
           RABBITMQ_PASS: ${{ secrets.RABBITMQ_PASS }}
           ML_SERVICE_URL: ${{ secrets.ML_SERVICE_URL }}
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
         with:
           host: ${{ secrets.ORACLE_HOST }}
           username: ${{ secrets.ORACLE_USER }}
           key: ${{ secrets.ORACLE_SSH_KEY }}
           port: 22
-          envs: SECRET_KEY,SMTP_USER,SMTP_PASS,NTFY_BASE_URL,NTFY_TOPIC_PREFIX,MISTRAL_API_KEY,SARVAM_API_KEY,SERVER_IP,RABBITMQ_USER,RABBITMQ_PASS,ML_SERVICE_URL
+          envs: SECRET_KEY,SMTP_USER,SMTP_PASS,NTFY_BASE_URL,NTFY_TOPIC_PREFIX,MISTRAL_API_KEY,SARVAM_API_KEY,SERVER_IP,RABBITMQ_USER,RABBITMQ_PASS,ML_SERVICE_URL,DOCKERHUB_USERNAME,DOCKERHUB_TOKEN
           script: |
             set -e
 
-            # Navigate to the repository directory
-            cd ~/AI4Good_RaktSaanchar || {
-              echo "Error: Directory ~/AI4Good_RaktSaanchar not found. Please clone the repository manually on the VM first."
-              exit 1
-            }
+            # Ensure repository exists on the VM (avoid early cd failure)
+            if [ ! -d ~/AI4Good_RaktSaanchar ]; then
+              echo "Repository not found. Cloning it..."
+              git clone https://github.com/abhinandan202004/AI4Good_RaktSaanchar.git ~/AI4Good_RaktSaanchar
+            fi
+            cd ~/AI4Good_RaktSaanchar
 
             # Hard reset local repo to discard any local modifications
             echo "Fetching latest changes..."
@@ -70,7 +73,45 @@ jobs:
             # Ensure models directory exists
             mkdir -p models
 
-            # Build and deploy using Docker Compose
+            # Make docker compose less likely to timeout
+            export COMPOSE_HTTP_TIMEOUT=300
+
+            # Optional: login to Docker Hub to avoid anonymous rate limits
+            if [ -n "${DOCKERHUB_USERNAME}" ] && [ -n "${DOCKERHUB_TOKEN}" ]; then
+              echo "Logging in to Docker Hub..."
+              echo "${DOCKERHUB_TOKEN}" | docker login -u "${DOCKERHUB_USERNAME}" --password-stdin || true
+            fi
+
+            # Retry helper for pulling
+            retry() {
+              local n=0
+              local max=5
+              local wait=10
+              until "$@"; do
+                n=$((n+1))
+                if [ "$n" -ge "$max" ]; then
+                  echo "Command failed after $n attempts: $*"
+                  return 1
+                fi
+                echo "Retry $n/$max after failure: $*"
+                sleep "$wait"
+              done
+              return 0
+            }
+
+            # Pre-pull base images used by Dockerfiles (reduces build-time network requests and transient TLS failures)
+            echo "Pre-pulling base images with retries..."
+            retry docker pull python:3.12-slim || {
+              echo "Warning: pre-pull of python:3.12-slim failed; continuing to build (may fail)."
+            }
+            retry docker pull node:20-alpine || true
+            retry docker pull nginx:alpine || true
+
+            # Pull other images referenced by compose if any (safe to ignore failures)
+            echo "Pulling other docker compose images..."
+            docker compose -f docker-compose.yml -f docker-compose.prod.yml pull || true
+
+            # Build and deploy using Docker Compose (build will use the pre-pulled base if available)
             echo "Rebuilding and starting Docker containers..."
             docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
 

@@ -95,8 +95,6 @@ services:
         condition: service_started
       chat-service:
         condition: service_started
-      ml-service:
-        condition: service_started
       chatbot-service:
         condition: service_started
 
@@ -203,6 +201,11 @@ services:
       - "8004:8004"
 
   ml-service:
+    # profiles: ["local"] means this service is EXCLUDED from plain `docker compose up`
+    # and from production deploys. It is only built/started when you explicitly run:
+    #   docker compose --profile local up --build
+    # In production, ML inference is handled by the Hugging Face Space instead.
+    profiles: ["local"]
     build:
       context: ./services/ml-service
       dockerfile: Dockerfile
