@@ -13,9 +13,9 @@ logger = logging.getLogger(__name__)
 class MistralService:
 
     @staticmethod
-    def generate_response(prompt: str) -> str:
-        # Use settings (loaded from HF Space secrets / .env) rather than bare os.getenv
-        api_key = settings.MISTRAL_API_KEY
+    def generate_response(prompt: str, api_key: str | None = None) -> str:
+        # Use settings (loaded from HF Space secrets / .env) rather than bare os.getenv, or override from header
+        api_key = api_key or settings.MISTRAL_API_KEY
         if not api_key or api_key.startswith("mock-"):
             logger.warning(
                 "MISTRAL_API_KEY is not set on this deployment. "

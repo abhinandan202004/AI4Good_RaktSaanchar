@@ -8,7 +8,8 @@ class ReportExplainer:
         extracted_values: dict,
         current_risk: str,
         risk_score: int,
-        days_until_high_risk: int
+        days_until_high_risk: int,
+        api_key: str | None = None
     ):
 
         prompt = f"""
@@ -45,5 +46,7 @@ Keep response patient friendly.
 """
 
         return MistralService.generate_response(
-            prompt
+            prompt,
+            api_key=api_key
         )
+

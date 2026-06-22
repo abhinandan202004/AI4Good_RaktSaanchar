@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
 
     ML_SERVICE_URL: str = "http://ml-service:8005"
+    MISTRAL_API_KEY: str | None = None
 
     UPLOAD_DIR: str = "/app/uploads"
     MAX_UPLOAD_SIZE_MB: int = 10

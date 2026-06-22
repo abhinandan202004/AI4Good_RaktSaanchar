@@ -2,8 +2,10 @@ from fastapi import (
     APIRouter,
     UploadFile,
     File,
-    HTTPException
+    HTTPException,
+    Header
 )
+from typing import Optional
 
 import os
 import shutil
@@ -28,9 +30,10 @@ os.makedirs(
 @router.post("/text", response_model=IronOverloadResponse)
 async def analyze_text(
     text: str,
+    x_mistral_api_key: Optional[str] = Header(None, alias="X-Mistral-API-Key")
 ):
     try:
-        result = IronOverloadService.analyze_text(text)
+        result = IronOverloadService.analyze_text(text, api_key=x_mistral_api_key)
         return result
     except Exception as e:
         raise HTTPException(
@@ -42,6 +45,7 @@ async def analyze_text(
 @router.post("/pdf", response_model=IronOverloadResponse)
 async def analyze_pdf(
     file: UploadFile = File(...),
+    x_mistral_api_key: Optional[str] = Header(None, alias="X-Mistral-API-Key")
 ):
     try:
         file_path = os.path.join(
@@ -58,7 +62,7 @@ async def analyze_pdf(
                 buffer
             )
 
-        result = IronOverloadService.analyze_pdf(file_path)
+        result = IronOverloadService.analyze_pdf(file_path, api_key=x_mistral_api_key)
         # Clean up local file after analysis
         if os.path.exists(file_path):
             os.remove(file_path)
@@ -73,6 +77,7 @@ async def analyze_pdf(
 @router.post("/image", response_model=IronOverloadResponse)
 async def analyze_image(
     file: UploadFile = File(...),
+    x_mistral_api_key: Optional[str] = Header(None, alias="X-Mistral-API-Key")
 ):
     try:
         file_path = os.path.join(
@@ -89,7 +94,7 @@ async def analyze_image(
                 buffer
             )
 
-        result = IronOverloadService.analyze_image(file_path)
+        result = IronOverloadService.analyze_image(file_path, api_key=x_mistral_api_key)
         # Clean up local file after analysis
         if os.path.exists(file_path):
             os.remove(file_path)
@@ -99,3 +104,4 @@ async def analyze_image(
             status_code=500,
             detail=str(e)
         )
+

@@ -140,6 +140,7 @@ services:
       SECRET_KEY: ${SECRET_KEY}
       ALGORITHM: HS256
       ML_SERVICE_URL: ${ML_SERVICE_URL:-http://ml-service:7860}
+      MISTRAL_API_KEY: ${MISTRAL_API_KEY}
     depends_on:
       db:
         condition: service_healthy

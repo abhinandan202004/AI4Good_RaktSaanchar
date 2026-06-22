@@ -81,6 +81,7 @@ services:
     ports: []
     environment:
       ML_SERVICE_URL: "${ML_SERVICE_URL}"
+      MISTRAL_API_KEY: "${MISTRAL_API_KEY}"
     mem_limit: 120m
 
   # Background worker

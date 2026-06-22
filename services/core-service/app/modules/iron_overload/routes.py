@@ -26,9 +26,14 @@ async def analyze_text(
     current_user=Depends(require_patient)
 ):
     try:
+        headers = {}
+        if settings.MISTRAL_API_KEY:
+            headers["X-Mistral-API-Key"] = settings.MISTRAL_API_KEY
+            
         resp = httpx.post(
             f"{settings.ML_SERVICE_URL}/analyze/text",
             params={"text": text},
+            headers=headers,
             timeout=30.0
         )
         if resp.status_code != 200:
@@ -55,9 +60,14 @@ async def analyze_pdf(
         file_content = await file.read()
         files = {"file": (file.filename, file_content, file.content_type)}
         
+        headers = {}
+        if settings.MISTRAL_API_KEY:
+            headers["X-Mistral-API-Key"] = settings.MISTRAL_API_KEY
+
         resp = httpx.post(
             f"{settings.ML_SERVICE_URL}/analyze/pdf",
             files=files,
+            headers=headers,
             timeout=30.0
         )
         if resp.status_code != 200:
@@ -83,9 +93,14 @@ async def analyze_image(
         file_content = await file.read()
         files = {"file": (file.filename, file_content, file.content_type)}
         
+        headers = {}
+        if settings.MISTRAL_API_KEY:
+            headers["X-Mistral-API-Key"] = settings.MISTRAL_API_KEY
+
         resp = httpx.post(
             f"{settings.ML_SERVICE_URL}/analyze/image",
             files=files,
+            headers=headers,
             timeout=30.0
         )
         if resp.status_code != 200:
