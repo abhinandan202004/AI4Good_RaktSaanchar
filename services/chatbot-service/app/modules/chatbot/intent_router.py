@@ -6,7 +6,7 @@ class IntentRouter:
         query = query.lower()
 
         # Check if the user is asking about their own profile details (blood type/group, profile, identity)
-        if any(term in query for term in ["my blood type", "my blood group", "what is my blood", "what's my blood", "my profile", "about me", "who am i", "my details"]):
+        if any(term in query for term in ["my blood type", "my blood group", "what is my blood", "what's my blood", "my profile", "about me", "who am i", "my details", "my name", "what is my name", "what's my name"]):
             return {
                 "intent": "PLATFORM",
                 "action": "MY_PROFILE"
