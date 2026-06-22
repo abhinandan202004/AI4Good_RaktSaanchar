@@ -1,5 +1,6 @@
 from pydantic import BaseModel, Field
 from typing import Literal
+from datetime import datetime
 
 
 class TransfusionPredictionCreate(BaseModel):
@@ -19,6 +20,26 @@ class TransfusionPredictionCreate(BaseModel):
     blood_group: Literal["O+", "O-", "A+", "A-", "B+", "B-", "AB+", "AB-"]
 
 
-class TransfusionInferenceOut(BaseModel):
+class TransfusionPredictionOut(BaseModel):
+    id: int
+    user_id: int
+    age: int
+    gender: str
+    weight_kg: float
+    thalassemia_type: str
+    current_hb_level: float
+    target_hb_level: float
+    ferritin_level: float
+    days_since_last_transfusion: int
+    previous_units_received: int
+    average_units_per_transfusion: float
+    transfusions_last_12_months: int
+    spleen_status: str
+    symptom_severity: str
+    blood_group: str
     predicted_units_required: int
     recommended_next_transfusion_in_days: int
+    created_at: datetime
+
+    class Config:
+        from_attributes = True

@@ -1,30 +1,15 @@
 from pydantic import BaseModel
-from typing import Optional, List
+from typing import Optional
 
 
-class DonorFeatureInput(BaseModel):
-    donor_id: int
-    user_id: int
-    blood_group: str
-    city: Optional[str] = None
-    is_available: bool
-    reliability_score: float
-    response_rate: float
-    no_show_count: int
-    total_donations: int
-    days_since_last_donation: int
-    latitude: Optional[float] = None
-    longitude: Optional[float] = None
-
-
-class ServerlessDonorRankRequest(BaseModel):
-    patient_blood_group: str
-    urgency: str
+class DonorRankRequest(BaseModel):
+    request_id: Optional[int] = None
+    patient_blood_group: Optional[str] = None   # e.g. "A+"
+    urgency: Optional[str] = None               # "low" / "medium" / "high" / "critical"
     units_required: int = 1
     patient_city: Optional[str] = None
     patient_latitude: Optional[float] = None
     patient_longitude: Optional[float] = None
-    donors: List[DonorFeatureInput]
     limit: int = 20
 
 

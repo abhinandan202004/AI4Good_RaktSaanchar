@@ -28,12 +28,13 @@ jobs:
           SERVER_IP: ${{ secrets.SERVER_IP }}
           RABBITMQ_USER: ${{ secrets.RABBITMQ_USER }}
           RABBITMQ_PASS: ${{ secrets.RABBITMQ_PASS }}
+          ML_SERVICE_URL: ${{ secrets.ML_SERVICE_URL }}
         with:
           host: ${{ secrets.ORACLE_HOST }}
           username: ${{ secrets.ORACLE_USER }}
           key: ${{ secrets.ORACLE_SSH_KEY }}
           port: 22
-          envs: SECRET_KEY,SMTP_USER,SMTP_PASS,NTFY_BASE_URL,NTFY_TOPIC_PREFIX,MISTRAL_API_KEY,SARVAM_API_KEY,SERVER_IP,RABBITMQ_USER,RABBITMQ_PASS
+          envs: SECRET_KEY,SMTP_USER,SMTP_PASS,NTFY_BASE_URL,NTFY_TOPIC_PREFIX,MISTRAL_API_KEY,SARVAM_API_KEY,SERVER_IP,RABBITMQ_USER,RABBITMQ_PASS,ML_SERVICE_URL
           script: |
             set -e
 
@@ -63,6 +64,7 @@ jobs:
             RABBITMQ_USER="${RABBITMQ_USER:-rakt}"
             RABBITMQ_PASS="${RABBITMQ_PASS:-rakt}"
             SERVER_IP="${SERVER_IP}"
+            ML_SERVICE_URL="${ML_SERVICE_URL:-https://abhinandan202004-raktsaanchar-ml.hf.space}"
             EOF
 
             # Ensure models directory exists

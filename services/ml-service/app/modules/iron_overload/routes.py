@@ -2,23 +2,22 @@ from fastapi import (
     APIRouter,
     UploadFile,
     File,
-    HTTPException,
-    Depends
+    HTTPException
 )
 
 import os
 import shutil
 
-from app.core.dependencies import require_patient
 from app.modules.iron_overload.service import IronOverloadService
 from app.modules.iron_overload.schemas.response import IronOverloadResponse
 
 router = APIRouter(
-    prefix="/iron-overload",
+    prefix="/analyze",
     tags=["Iron Overload Analysis"]
 )
 
-UPLOAD_DIR = "/app/uploads/mri_reports"
+# Use /tmp as upload dir to avoid permission denied issues in serverless runtimes
+UPLOAD_DIR = "/tmp/mri_reports"
 
 os.makedirs(
     UPLOAD_DIR,
@@ -26,10 +25,9 @@ os.makedirs(
 )
 
 
-@router.post("/analyze/text", response_model=IronOverloadResponse)
+@router.post("/text", response_model=IronOverloadResponse)
 async def analyze_text(
     text: str,
-    current_user=Depends(require_patient)
 ):
     try:
         result = IronOverloadService.analyze_text(text)
@@ -41,10 +39,9 @@ async def analyze_text(
         )
 
 
-@router.post("/analyze/pdf", response_model=IronOverloadResponse)
+@router.post("/pdf", response_model=IronOverloadResponse)
 async def analyze_pdf(
     file: UploadFile = File(...),
-    current_user=Depends(require_patient)
 ):
     try:
         file_path = os.path.join(
@@ -62,6 +59,9 @@ async def analyze_pdf(
             )
 
         result = IronOverloadService.analyze_pdf(file_path)
+        # Clean up local file after analysis
+        if os.path.exists(file_path):
+            os.remove(file_path)
         return result
     except Exception as e:
         raise HTTPException(
@@ -70,10 +70,9 @@ async def analyze_pdf(
         )
 
 
-@router.post("/analyze/image", response_model=IronOverloadResponse)
+@router.post("/image", response_model=IronOverloadResponse)
 async def analyze_image(
     file: UploadFile = File(...),
-    current_user=Depends(require_patient)
 ):
     try:
         file_path = os.path.join(
@@ -91,6 +90,9 @@ async def analyze_image(
             )
 
         result = IronOverloadService.analyze_image(file_path)
+        # Clean up local file after analysis
+        if os.path.exists(file_path):
+            os.remove(file_path)
         return result
     except Exception as e:
         raise HTTPException(

@@ -6,8 +6,7 @@ class Settings(BaseSettings):
     APP_NAME: str = "RaktSaanchar ML Service"
     APP_VERSION: str = "2.0.0"
 
-    # Read-only access to core schema
-    DATABASE_URL: str
+    # Removed DATABASE_URL since this is a pure inference server
 
     SECRET_KEY: str = "change-me"
     ALGORITHM: str = "HS256"

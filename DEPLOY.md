@@ -304,6 +304,49 @@ sudo ls -l /etc/letsencrypt/live/<YOUR_DOMAIN>/
 
 ---
 
+## Step 11 — Deploying ML Services to Hugging Face Spaces (Serverless)
+
+Moving ML workloads to Hugging Face Spaces saves a massive amount of RAM and CPU on your Oracle Cloud VM. Hugging Face provides a **free 16 GB RAM container** which is perfect for PyTorch and EasyOCR.
+
+### 11a — Create the Hugging Face Space
+1. Sign up or log in at [huggingface.co](https://huggingface.co/).
+2. Go to **Spaces** ➔ [Create new Space](https://huggingface.co/new-space).
+3. Set the following settings:
+   - **Space Name**: `raktsaanchar-ml`
+   - **SDK**: `Docker`
+   - **Docker Template**: `Blank`
+   - **Space Hardware**: `CPU basic • 2 vCPU • 16 GB • Free`
+   - **Visibility**: `Public` (recommended — since it contains no database secrets)
+4. Click **Create Space**.
+
+### 11b — Upload ML Code and Model Files
+Hugging Face Spaces are backed by a Git repository. You can push the files directly using Git:
+
+1. Clone your new Hugging Face Space locally:
+   ```bash
+   git clone https://huggingface.co/spaces/<YOUR_HF_USERNAME>/raktsaanchar-ml
+   ```
+2. Copy the contents of the `services/ml-service/` folder (which includes `Dockerfile`, `requirements.txt`, `app/`, and the `models/` directory containing all `.pkl` model files) into the cloned Hugging Face Space directory.
+3. Commit and push the changes:
+   ```bash
+   cd raktsaanchar-ml
+   git add .
+   git commit -m "Deploy serverless ML and OCR API"
+   git push
+   ```
+4. Hugging Face will automatically build and start the container. You can monitor the progress on the **App** or **Logs** tab of your Hugging Face Space.
+
+### 11c — Add ML_SERVICE_URL to GitHub Secrets
+1. Go to your GitHub repository ➔ **Settings** ➔ **Secrets and variables** ➔ **Actions**.
+2. Click **New repository secret**:
+   - **Name**: `ML_SERVICE_URL`
+   - **Value**: `https://<YOUR_HF_USERNAME>-raktsaanchar-ml.hf.space` (replace `<YOUR_HF_USERNAME>` with your actual Hugging Face username, all lowercase).
+3. If you have a Mistral API key, make sure to add `MISTRAL_API_KEY` as a secret in your Hugging Face Space **Settings** under **Variables and secrets** (so the OCR explainer can generate summaries).
+
+Once the secret is added, push any code change to GitHub main. The CI/CD pipeline will deploy, and `core-service` on the VM will automatically forward all ML queries to the Hugging Face Space!
+
+---
+
 ## Useful Commands
 
 ```bash
@@ -316,3 +359,85 @@ free -h
 # Check Docker container memory usage
 docker stats
 ```
+
+---
+
+## Billing & Instance Management
+
+### ⚠️ Understanding Oracle Cloud Always Free
+
+Your instance is a **VM.Standard.E2.1.Micro** (Always Free eligible). As long as you stay within the Always Free limits, **you will not be billed**. However, some actions can inadvertently trigger charges:
+
+| Resource | Always Free | Paid |
+|---|---|---|
+| `VM.Standard.E2.1.Micro` compute | ✅ Free (up to 2 instances) | — |
+| Boot volume storage (47 GB default) | ✅ Free | Extra storage costs money |
+| Public IP address (static) | ✅ Free (1 per Always Free instance) | Extra reserved IPs cost money |
+| **Data egress (outbound traffic)** | ✅ 10 GB/month free | Above 10 GB is charged |
+| **Block Volume (additional disk)** | ⚠️ Only 200 GB free total | Extra costs money |
+
+> **Bottom line**: Your `VM.Standard.E2.1.Micro` instance with default boot volume is **free to run 24/7**. Stopping it saves no money but also costs nothing. The main billing risk is **outbound data transfer > 10 GB/month**.
+
+---
+
+### 🔴 How to STOP the Instance (via Oracle Cloud Console)
+
+Stopping the instance shuts down the VM. Docker containers stop, and your website goes offline. The storage and IP address are preserved.
+
+1. Go to [cloud.oracle.com](https://cloud.oracle.com) and log in.
+2. Navigate to: **☰ Menu** ➔ **Compute** ➔ **Instances**.
+3. Click on your instance name (e.g., `instance-20260617-0046`).
+4. On the instance details page, click the **Stop** button at the top.
+5. In the confirmation dialog, click **Stop Instance**.
+6. Wait for the instance state to change from `RUNNING` → `STOPPING` → **`STOPPED`**.
+
+> Your website (`https://raktsaanchar.servehttp.com`) will go offline immediately.
+
+**Alternative — Stop via SSH (graceful Docker shutdown before VM stop):**
+```bash
+# SSH into the VM
+ssh -i ~/Downloads/ssh-key-2026-06-16.key ubuntu@140.238.229.46
+
+# Gracefully stop all Docker containers first
+docker compose -f ~/AI4Good_RaktSaanchar/docker-compose.yml -f ~/AI4Good_RaktSaanchar/docker-compose.prod.yml down
+
+# Then stop the instance from Oracle Console as described above
+```
+
+---
+
+### 🟢 How to START the Instance (via Oracle Cloud Console)
+
+1. Go to [cloud.oracle.com](https://cloud.oracle.com) and log in.
+2. Navigate to: **☰ Menu** ➔ **Compute** ➔ **Instances**.
+3. Click on your instance name.
+4. Click the **Start** button at the top.
+5. Wait for the instance state to change from `STOPPED` → `STARTING` → **`RUNNING`**.
+
+> The VM will boot up in ~1-2 minutes. **Docker containers set to `restart: unless-stopped` will automatically restart** because that policy only skips auto-restart when you explicitly ran `docker compose down`. If you gracefully stopped containers before shutting down, restart them manually:
+
+```bash
+# SSH into the VM after it starts
+ssh -i ~/Downloads/ssh-key-2026-06-16.key ubuntu@140.238.229.46
+
+# Start all Docker containers
+cd ~/AI4Good_RaktSaanchar
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+
+# Verify everything is running
+docker compose -f docker-compose.yml -f docker-compose.prod.yml ps
+```
+
+> Your website at `https://raktsaanchar.servehttp.com` will be back online in ~1-2 minutes after the containers start.
+
+---
+
+### 🗑️ How to TERMINATE (Permanently Delete) the Instance
+
+> [!CAUTION]
+> **Terminating permanently deletes the instance and all data on it.** This cannot be undone. Only do this if you are sure you no longer need the server.
+
+1. Go to the instance details page in Oracle Cloud Console.
+2. Click **More Actions** ➔ **Terminate**.
+3. In the dialog, check **"Permanently delete the attached boot volume"** if you want to free all storage.
+4. Click **Terminate Instance**.
