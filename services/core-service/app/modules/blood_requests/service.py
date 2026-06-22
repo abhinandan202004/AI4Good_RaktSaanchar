@@ -1,4 +1,4 @@
-﻿"""
+"""
 Blood Request Service â€” core-service microservices version.
 
 Key changes from monolith:
@@ -46,30 +46,84 @@ def _haversine_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> f
 def _call_ml_rank_donors(
     blood_group: str, urgency: str, units: int,
     city: Optional[str], lat: Optional[float], lon: Optional[float],
+    db=None,  # kept for signature compatibility
     limit: int = 10,
 ) -> list:
-    """Call ml-service /internal/rank-donors via HTTP. Returns empty list on failure."""
+    """Call ml-service POST /predict/donor-ranks (Hugging Face Space). Returns empty list on failure."""
     try:
         import httpx
+        import math
+        from datetime import datetime, timezone, timedelta
         from app.core.config import settings
-        resp = httpx.get(
-            f"{settings.ML_SERVICE_URL}/internal/rank-donors",
-            params={
-                "blood_group": blood_group,
-                "urgency": urgency,
-                "units_required": units,
-                "patient_city": city or "",
-                "patient_lat": lat or 0,
-                "patient_lon": lon or 0,
-                "limit": limit,
-            },
-            timeout=10.0,
+        from app.modules.donors.models import Donor
+        from sqlalchemy import or_
+
+        if db is None:
+            # Cannot query donors without a DB session — return empty
+            return []
+
+        # Fetch eligible donors (cooldown 90 days, available)
+        cooldown_limit = datetime.now(timezone.utc) - timedelta(days=90)
+        donors = (
+            db.query(Donor)
+            .filter(
+                Donor.is_available == True,
+                or_(
+                    Donor.last_donated_at == None,
+                    Donor.last_donated_at <= cooldown_limit
+                )
+            )
+            .all()
+        )
+
+        def _days_since(d):
+            if d.last_donated_at is None:
+                return 365
+            return max(90, (datetime.now(timezone.utc) - d.last_donated_at).days)
+
+        donor_features = [
+            {
+                "donor_id": d.id,
+                "user_id": d.user_id,
+                "blood_group": d.blood_group.value,
+                "city": d.city,
+                "is_available": d.is_available,
+                "reliability_score": d.reliability_score,
+                "response_rate": d.response_rate,
+                "no_show_count": d.no_show_count or 0,
+                "total_donations": d.total_donations or 0,
+                "days_since_last_donation": _days_since(d),
+                "latitude": d.latitude,
+                "longitude": d.longitude,
+            }
+            for d in donors
+        ]
+
+        payload = {
+            "patient_blood_group": blood_group,
+            "urgency": urgency,
+            "units_required": units,
+            "patient_city": city or "",
+            "patient_latitude": lat,
+            "patient_longitude": lon,
+            "donors": donor_features,
+            "limit": limit,
+        }
+        resp = httpx.post(
+            f"{settings.ML_SERVICE_URL}/predict/donor-ranks",
+            json=payload,
+            timeout=15.0,
         )
         if resp.status_code == 200:
-            return resp.json().get("donors", [])
+            data = resp.json()
+            # HF Space returns a plain list; guard against old {"donors":[...]} shape
+            if isinstance(data, list):
+                return data
+            return data.get("donors", [])
     except Exception as exc:
         logger.warning("ML service call failed: %s", exc)
     return []
+
 
 
 class BloodRequestService:
@@ -95,6 +149,7 @@ class BloodRequestService:
                     city=patient.city,
                     lat=patient.latitude,
                     lon=patient.longitude,
+                    db=self.repo.db,
                     limit=10,
                 )
             else:
@@ -132,6 +187,7 @@ class BloodRequestService:
             city=patient.city,
             lat=patient.latitude,
             lon=patient.longitude,
+            db=self.repo.db,
             limit=10,
         )
         req.top_donors = top_donors
