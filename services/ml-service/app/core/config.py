@@ -11,6 +11,9 @@ class Settings(BaseSettings):
     SECRET_KEY: str = "change-me"
     ALGORITHM: str = "HS256"
 
+    # Mistral AI — set as a Hugging Face Space secret named MISTRAL_API_KEY
+    MISTRAL_API_KEY: str = ""
+
     # Model paths — mounted from host volume ./models:/app/models
     MODEL_PATH: str = "/app/models/donor_ranking_xgboost.pkl"
     COLS_PATH: str = "/app/models/feature_columns.pkl"
