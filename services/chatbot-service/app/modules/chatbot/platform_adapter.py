@@ -27,6 +27,12 @@ class PlatformAdapter:
             }
 
     @staticmethod
+    async def get_user_profile(token: str) -> dict:
+        return await PlatformAdapter._get(
+            settings.AUTH_SERVICE_URL, "/api/v1/auth/me", token
+        )
+
+    @staticmethod
     async def get_donor_profile(token: str) -> dict:
         return await PlatformAdapter._get(
             settings.CORE_SERVICE_URL, "/api/v1/donors/me", token

@@ -45,10 +45,15 @@ async def chat(
     if intent == "PLATFORM":
         token = current_user.token
         if action == "MY_PROFILE":
+            user_profile = await PlatformAdapter.get_user_profile(token)
             if current_user.role == "patient":
-                data = await PlatformAdapter.get_patient_profile(token)
+                profile_data = await PlatformAdapter.get_patient_profile(token)
             else:
-                data = await PlatformAdapter.get_donor_profile(token)
+                profile_data = await PlatformAdapter.get_donor_profile(token)
+            data = {
+                "user": user_profile,
+                "profile": profile_data
+            }
         elif action == "DONOR_PROFILE":
             data = await PlatformAdapter.get_donor_profile(token)
         elif action == "PATIENT_PROFILE":

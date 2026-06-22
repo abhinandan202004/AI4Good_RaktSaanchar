@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     # Core service URL for blood request data lookups
     CORE_SERVICE_URL: str = "http://core-service:8002"
     NOTIFICATION_SERVICE_URL: str = "http://notification-service:8003"
+    AUTH_SERVICE_URL: str = "http://auth-service:8001"
 
     class Config:
         env_file = ".env"

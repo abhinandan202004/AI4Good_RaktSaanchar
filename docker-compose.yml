@@ -230,6 +230,7 @@ services:
       MISTRAL_API_KEY: ${MISTRAL_API_KEY}
       SARVAM_API_KEY: ${SARVAM_API_KEY}
       CORE_SERVICE_URL: http://core-service:8002
+      AUTH_SERVICE_URL: http://auth-service:8001
     depends_on:
       redis:
         condition: service_healthy
