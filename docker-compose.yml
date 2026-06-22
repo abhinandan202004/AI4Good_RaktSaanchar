@@ -141,7 +141,7 @@ services:
       RABBITMQ_URL: amqp://rakt:rakt@rabbitmq/
       SECRET_KEY: ${SECRET_KEY}
       ALGORITHM: HS256
-      ML_SERVICE_URL: http://ml-service:8005
+      ML_SERVICE_URL: ${ML_SERVICE_URL:-http://ml-service:7860}
     depends_on:
       db:
         condition: service_healthy
@@ -149,8 +149,6 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
-      ml-service:
-        condition: service_started
     ports:
       - "8002:8002"
 
@@ -210,18 +208,11 @@ services:
       dockerfile: Dockerfile
     networks: [rakt-net]
     environment:
-      # Read-only access to core schema (donors, patients, blood_requests tables)
-      DATABASE_URL: postgresql://rakt:rakt@db:5432/raktsaanchar?options=-csearch_path%3Dcore%2Cpublic
       SECRET_KEY: ${SECRET_KEY}
       ALGORITHM: HS256
       MISTRAL_API_KEY: ${MISTRAL_API_KEY}
-    depends_on:
-      db:
-        condition: service_healthy
     ports:
-      - "8005:8005"
-    volumes:
-      - ./models:/app/models:ro    # Mount .pkl model files as read-only
+      - "7860:7860"
 
   chatbot-service:
     build:

@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, Dict, Any
 
 
 class MRIReportData(BaseModel):
@@ -17,3 +17,11 @@ class MRIReportData(BaseModel):
     age: Optional[int] = None
     weight_kg: Optional[float] = None
     hemoglobin: Optional[float] = None
+
+
+class IronOverloadResponse(BaseModel):
+    current_risk: str
+    risk_score: float
+    days_until_high_risk: int
+    explanation: str
+    extracted_values: Dict[str, Any]

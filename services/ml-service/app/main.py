@@ -7,31 +7,14 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
-from app.core.database import Base, engine
-
-# ML service only reads from core schema (donors, patients, blood_requests)
-# It doesn't create its own tables; Base.metadata.create_all is a no-op here
-# because all referenced tables live in the core schema.
-
-# ── Register all ORM models in SQLAlchemy registry at startup ───────────────
-from app.modules.users.models import User                              # noqa
-from app.modules.donors.models import Donor                            # noqa
-from app.modules.patients.models import Patient                        # noqa
-from app.modules.blood_requests.models import BloodRequest             # noqa
-from app.modules.blood_bank.models import (                            # noqa
-    BloodInventory, BloodUnit, BloodValidationReport, BloodBankProfile
-)
-from app.modules.transfusion.models import TransfusionPrediction       # noqa
-
-Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title=settings.APP_NAME,
     version=settings.APP_VERSION,
-    description="RaktSaanchar ML Service — donor ranking and GeoJSON map data",
-    docs_url="/api/v1/ml/docs",
-    redoc_url="/api/v1/ml/redoc",
-    openapi_url="/api/v1/ml/openapi.json",
+    description="RaktSaanchar ML Service — Serverless Inference API",
+    docs_url="/docs",
+    redoc_url="/redoc",
+    openapi_url="/openapi.json",
 )
 
 app.add_middleware(
@@ -42,17 +25,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-API_PREFIX = "/api/v1"
-
 from app.modules.ml.routes import router as ml_router
 from app.modules.transfusion.routes import router as transfusion_router
 from app.modules.iron_overload.routes import router as iron_overload_router
 
-app.include_router(ml_router,         prefix=API_PREFIX)
-app.include_router(transfusion_router, prefix=API_PREFIX)
-app.include_router(iron_overload_router, prefix=API_PREFIX)
-
-
+# Direct routing for serverless endpoints
+app.include_router(ml_router)
+app.include_router(transfusion_router)
+app.include_router(iron_overload_router)
 
 
 @app.get("/")
@@ -63,37 +43,3 @@ def root():
 @app.get("/health")
 def health():
     return {"status": "ok", "service": "ml-service"}
-
-
-@app.get("/internal/rank-donors")
-def internal_rank_donors(
-    blood_group: str,
-    urgency: str = "medium",
-    units_required: int = 1,
-    patient_city: str = "",
-    patient_lat: float = 0.0,
-    patient_lon: float = 0.0,
-    limit: int = 10,
-):
-    """
-    Internal endpoint called by core-service to get ranked donor list.
-    Not exposed via the Nginx gateway (internal Docker network only).
-    """
-    from app.core.database import SessionLocal
-    from app.modules.ml.service import rank_donors
-
-    db = SessionLocal()
-    try:
-        donors = rank_donors(
-            db=db,
-            patient_blood_group=blood_group,
-            urgency=urgency,
-            units_required=units_required,
-            patient_city=patient_city or None,
-            patient_latitude=patient_lat or None,
-            patient_longitude=patient_lon or None,
-            limit=limit,
-        )
-        return {"donors": donors}
-    finally:
-        db.close()

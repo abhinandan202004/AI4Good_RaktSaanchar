@@ -1,15 +1,7 @@
-from sqlalchemy.orm import Session
-from app.modules.transfusion.models import TransfusionPrediction
-from app.modules.transfusion.schemas import TransfusionPredictionCreate
-
-
 import logging
 from pathlib import Path
-from datetime import datetime, timezone
 import joblib
 import pandas as pd
-from sqlalchemy.orm import Session
-from app.modules.transfusion.models import TransfusionPrediction
 from app.modules.transfusion.schemas import TransfusionPredictionCreate
 
 logger = logging.getLogger(__name__)
@@ -36,10 +28,7 @@ def _load_thalassemia_model():
 
 
 class TransfusionService:
-    def __init__(self, db: Session):
-        self.db = db
-
-    def predict_and_store(self, user_id: int, data: TransfusionPredictionCreate) -> TransfusionPrediction:
+    def predict_units(self, data: TransfusionPredictionCreate) -> dict:
         # Load the model if not loaded yet
         _load_thalassemia_model()
 
@@ -135,35 +124,7 @@ class TransfusionService:
         else:
             days_until_next = 30
 
-        # Save to database
-        prediction_record = TransfusionPrediction(
-            user_id=user_id,
-            age=data.age,
-            gender=data.gender,
-            weight_kg=data.weight_kg,
-            thalassemia_type=data.thalassemia_type,
-            current_hb_level=data.current_hb_level,
-            target_hb_level=data.target_hb_level,
-            ferritin_level=data.ferritin_level,
-            days_since_last_transfusion=data.days_since_last_transfusion,
-            previous_units_received=data.previous_units_received,
-            average_units_per_transfusion=data.average_units_per_transfusion,
-            transfusions_last_12_months=data.transfusions_last_12_months,
-            spleen_status=data.spleen_status,
-            symptom_severity=data.symptom_severity,
-            blood_group=data.blood_group,
-            predicted_units_required=predicted_units,
-            recommended_next_transfusion_in_days=days_until_next,
-        )
-        self.db.add(prediction_record)
-        self.db.commit()
-        self.db.refresh(prediction_record)
-        return prediction_record
-
-    def get_history(self, user_id: int) -> list[TransfusionPrediction]:
-        return (
-            self.db.query(TransfusionPrediction)
-            .filter(TransfusionPrediction.user_id == user_id)
-            .order_by(TransfusionPrediction.created_at.desc())
-            .all()
-        )
+        return {
+            "predicted_units_required": predicted_units,
+            "recommended_next_transfusion_in_days": days_until_next,
+        }
