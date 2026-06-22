@@ -1,33 +1,43 @@
 from pathlib import Path
-from langchain_community.vectorstores import FAISS
-
-from app.modules.chatbot.embedding_service import get_embeddings
-from app.modules.chatbot.mistral_service import generate_response
 import logging
+
+from app.modules.chatbot.mistral_service import generate_response
 
 logger = logging.getLogger(__name__)
 
-# Vectorstore folder is inside modules/chatbot/vectorstore/faiss_index
-_INDEX_DIR = Path(__file__).resolve().parent / "vectorstore" / "faiss_index"
-
-_vectorstore = None
+_KNOWLEDGE_DIR = Path(__file__).resolve().parent / "knowledge_base"
+_cached_context = None
 
 
-def _get_vectorstore():
-    global _vectorstore
-    if _vectorstore is not None:
-        return _vectorstore
+def _load_knowledge_base() -> str:
+    global _cached_context
+    if _cached_context is not None:
+        return _cached_context
+
+    context_parts = []
     try:
-        _vectorstore = FAISS.load_local(
-            str(_INDEX_DIR),
-            get_embeddings(),
-            allow_dangerous_deserialization=True
+        if _KNOWLEDGE_DIR.exists():
+            for file_path in sorted(_KNOWLEDGE_DIR.glob("*.md")):
+                with open(
+                    file_path,
+                    "r",
+                    encoding="utf-8"
+                ) as f:
+                    content = f.read().strip()
+                if content:
+                    doc_title = file_path.stem.replace("_", " ").title()
+                    context_parts.append(
+                        f"=== {doc_title} ===\n{content}"
+                    )
+        _cached_context = "\n\n".join(context_parts)
+        logger.info(
+            "Loaded chatbot knowledge base (%d chars)",
+            len(_cached_context)
         )
-        logger.info("✅ FAISS Vector store loaded successfully from %s", _INDEX_DIR)
     except Exception as e:
-        logger.error("❌ Failed to load FAISS Vector store: %s", e)
-        _vectorstore = None
-    return _vectorstore
+        logger.error("Failed to load knowledge base: %s", e)
+        _cached_context = ""
+    return _cached_context
 
 
 class RAGService:
@@ -36,33 +46,23 @@ class RAGService:
         self,
         query: str
     ):
-        vectorstore = _get_vectorstore()
-        if not vectorstore:
+        context = _load_knowledge_base()
+        if not context:
             return generate_response(query)
 
-        try:
-            docs = vectorstore.similarity_search(
-                query,
-                k=3
-            )
+        prompt = f"""
+You are the RaktaSanchaar AI Assistant. Use the following official Knowledge Base context to answer the user's question.
 
-            context = "\n\n".join(
-                [doc.page_content for doc in docs]
-            )
-
-            prompt = f"""
-Context:
+[KNOWLEDGE BASE CONTEXT]
 {context}
 
-Question:
+[USER QUESTION]
 {query}
 
-Answer:
+Answer the user's question concisely, professionally, and friendly based ONLY on the context provided above. If the context does not contain the answer, answer generally or ask them to consult their coordinator.
 """
-            return generate_response(prompt)
-        except Exception as e:
-            logger.error("RAG similarity search failed: %s", e)
-            return generate_response(query)
+        return generate_response(prompt)
 
 
 rag_service = RAGService()
+
