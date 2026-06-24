@@ -14,6 +14,7 @@ class RequestStatus(str, enum.Enum):
     fulfilled = "fulfilled"
     cancelled = "cancelled"
     escalated = "escalated"
+    validation_failed = "validation_failed"
 
 
 class AssignedBy(str, enum.Enum):
@@ -29,7 +30,7 @@ class BloodRequest(Base):
     blood_group = Column(Enum(BloodGroup), nullable=False)
     units_required = Column(Integer, default=1, nullable=False)
     urgency = Column(String, nullable=False)  # mirrors Patient.UrgencyLevel
-    status = Column(Enum(RequestStatus), default=RequestStatus.pending, nullable=False)
+    status = Column(Enum(RequestStatus, name="requeststatus"), default=RequestStatus.pending, nullable=False)
 
     # Assignment
     assigned_donor_id = Column(Integer, ForeignKey("donors.id"), nullable=True)

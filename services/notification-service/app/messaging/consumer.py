@@ -249,15 +249,51 @@ async def handle_badge_awarded(event: dict) -> None:
             db.close()
 
 
+async def handle_blood_request_validation_rejected(event: dict) -> None:
+    """
+    Fired when a blood bank submits a REJECTED validation report.
+    Pushes a high-priority notification to the patient to raise a new blood request.
+    The now-invalid donor is already excluded from future matching via is_available=False.
+    """
+    patient_user_id = event.get("patient_user_id")
+    request_id = event.get("request_id")
+    issue_category = event.get("issue_category")
+
+    if not patient_user_id:
+        return
+
+    db = _get_notif_db()
+    try:
+        detail = f" ({issue_category.replace('_', ' ').title()})" if issue_category else ""
+        _create_notification(
+            db, patient_user_id,
+            "⚠️ Donation Validation Failed",
+            f"The blood donated for your request #{request_id} did not pass the lab validation{detail}. "
+            f"Please raise a new blood request — a different donor will be matched for you.",
+            "request",
+        )
+        PushService.send_high(
+            patient_user_id,
+            "⚠️ Donation Validation Failed",
+            f"Your blood request #{request_id} needs a new donor. Please open the app and create a new request.",
+        )
+        logger.info("✅ Notified patient %s of validation_rejected for request #%s", patient_user_id, request_id)
+    except Exception as exc:
+        logger.warning("Error handling blood_request.validation_rejected: %s", exc)
+    finally:
+        db.close()
+
+
 # ── Event routing ─────────────────────────────────────────────────────────────
 
 EVENT_HANDLERS = {
-    "otp.send":                  handle_otp_send,
-    "blood_request.created":     handle_blood_request_created,
-    "blood_request.matched":     handle_blood_request_matched,
-    "blood_request.accepted":    handle_blood_request_accepted,
-    "blood_request.fulfilled":   handle_blood_request_fulfilled,
-    "badge.awarded":             handle_badge_awarded,
+    "otp.send":                          handle_otp_send,
+    "blood_request.created":             handle_blood_request_created,
+    "blood_request.matched":             handle_blood_request_matched,
+    "blood_request.accepted":            handle_blood_request_accepted,
+    "blood_request.fulfilled":           handle_blood_request_fulfilled,
+    "badge.awarded":                     handle_badge_awarded,
+    "blood_request.validation_rejected": handle_blood_request_validation_rejected,
 }
 
 

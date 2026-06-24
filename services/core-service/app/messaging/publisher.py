@@ -129,3 +129,24 @@ def publish_badge_awarded(
         "badge_name": badge_name,
         "badge_icon": badge_icon,
     })
+
+
+def publish_blood_request_validation_rejected(
+    request_id: int,
+    patient_user_id: int,
+    donor_id: int,
+    issue_category: Optional[str] = None,
+) -> None:
+    """
+    Fired when a blood bank submits a REJECTED validation report.
+    notification-service will push the patient to raise a new blood request,
+    excluding the now-invalid donor.
+    """
+    _fire("blood_request.validation_rejected", {
+        "event": "blood_request.validation_rejected",
+        "request_id": request_id,
+        "patient_user_id": patient_user_id,
+        "donor_id": donor_id,
+        "issue_category": issue_category,
+    })
+
