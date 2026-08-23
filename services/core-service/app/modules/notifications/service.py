@@ -1,4 +1,4 @@
-﻿from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session
 
 
 class NotificationService:
@@ -25,3 +25,13 @@ class NotificationService:
 
     def send_broadcast(self, blood_group: str, message: str) -> None:
         pass
+
+    def notify_validation_report(self, user_id: int, status: str, issue_category: str = None) -> None:
+        pass
+
+    def send_to_user(self, user_id: int, title: str, body: str) -> None:
+        pass
+
+    def broadcast_to_donors(self, blood_group, title: str, body: str) -> None:
+        pass
+

@@ -1,0 +1,46 @@
+apiVersion: 1
+
+datasources:
+  # ── 1. Prometheus Metrics Datasource ────────────────────────────────────────
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+    editable: true
+    jsonData:
+      httpMethod: POST
+      timeInterval: 5s
+
+  # ── 2. Loki Logs Datasource (with Trace-to-Log & Log-to-Trace links) ────────
+  - name: Loki
+    type: loki
+    access: proxy
+    url: http://loki:3100
+    editable: true
+    jsonData:
+      maxLines: 1000
+      derivedFields:
+        # Extracts trace_id from JSON logs and provides a direct 1-click link into Jaeger traces
+        - datasourceUid: jaeger-datasource
+          matcherRegex: '"trace_id":\s*"([a-fA-F0-9]+)"'
+          name: TraceID
+          url: '$${__value.raw}'
+          urlDisplayLabel: 'View Trace in Jaeger'
+
+  # ── 3. Jaeger Traces Datasource (with Trace-to-Logs linking) ─────────────────
+  - name: Jaeger
+    type: jaeger
+    uid: jaeger-datasource
+    access: proxy
+    url: http://jaeger:16686
+    editable: true
+    jsonData:
+      tracesToLogs:
+        datasourceUid: Loki
+        tags: ['service.name', 'app']
+        mappedTags: [{ key: 'service.name', value: 'service' }]
+        mapTagNamesEnabled: true
+        filterByTraceID: true
+        filterBySpanID: false
+        query: '{$${__tags}} |= "$${__trace.id}"'

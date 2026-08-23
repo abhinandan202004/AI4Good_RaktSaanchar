@@ -1,0 +1,38 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  scrape_timeout: 10s
+
+# Alertmanager configuration (optional placeholder)
+alerting:
+  alertmanagers:
+    - static_configs: []
+
+rule_files: []
+
+scrape_configs:
+  # 1. Scrape Prometheus internal metrics
+  - job_name: "prometheus"
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  # 2. Scrape FastAPI Application metrics endpoint
+  - job_name: "fastapi-service"
+    metrics_path: "/metrics"
+    scrape_interval: 5s  # faster scrape interval for responsive lab testing
+    static_configs:
+      - targets: ["fastapi:8000"]
+        labels:
+          app: "fastapi"
+          env: "observability-lab"
+          service: "fastapi-service"
+
+  # 3. Scrape Loki internal metrics
+  - job_name: "loki"
+    static_configs:
+      - targets: ["loki:3100"]
+
+  # 4. Scrape Promtail internal metrics
+  - job_name: "promtail"
+    static_configs:
+      - targets: ["promtail:9080"]

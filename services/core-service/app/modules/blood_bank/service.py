@@ -1,4 +1,4 @@
-﻿from fastapi import HTTPException, status
+from fastapi import HTTPException, status
 
 from app.modules.blood_bank.repository import BloodBankRepository
 from app.modules.blood_bank.models import BloodUnit, UnitStatus
@@ -178,19 +178,44 @@ class BloodBankService:
                 self.repo.db.commit()
                 self.notif.send_to_user(
                     donor.user_id,
-                    "ðŸŽ–ï¸ Points Earned!",
+                    "Points Earned!",
                     f"Congratulations! Your blood donation has been verified. You earned 10 points! Total points: {donor.points}"
                 )
                 self.notif.send_to_user(
                     donor.user_id,
-                    "â³ Cooldown Period Active",
+                    "Cooldown Period Active",
                     "Your blood donation validation report has been approved. You are now placed on a 90-day recovery cooldown to protect your health. Match acceptance has been disabled."
                 )
             else:
                 # Deactivate/Flag the donor due to rejected lab report
                 donor.is_available = False
                 self.repo.db.commit()
-                
+
+                # ── Find the affected blood request & mark it failed ──────────
+                from app.modules.blood_requests.models import BloodRequest, RequestStatus
+                affected_request = (
+                    self.repo.db.query(BloodRequest)
+                    .filter(
+                        BloodRequest.assigned_donor_id == donor.id,
+                        BloodRequest.status == RequestStatus.fulfilled,
+                    )
+                    .order_by(BloodRequest.updated_at.desc())
+                    .first()
+                )
+
+                patient_user_id = None
+                if affected_request:
+                    patient_user_id = (
+                        affected_request.patient.user_id
+                        if affected_request.patient else None
+                    )
+                    # Reset request so patient can re-raise a new matching
+                    affected_request.status = RequestStatus.validation_failed
+                    affected_request.assigned_donor_id = None
+                    affected_request.assigned_blood_bank_id = None
+                    affected_request.assigned_by = None
+                    self.repo.db.commit()
+
                 # Notify all coordinators
                 from app.modules.users.models import User, UserRole
                 coordinators = self.repo.db.query(User).filter(User.role == UserRole.coordinator).all()
@@ -198,9 +223,25 @@ class BloodBankService:
                 for coord in coordinators:
                     self.notif.send_to_user(
                         coord.id,
-                        "ðŸš¨ Donor Health Flag Alert",
+                        "🚨 Donor Health Flag Alert",
                         f"Donor {donor_name} has been flagged/deactivated during blood validation. Reason: {data.issue_category} - {data.feedback_notes or 'No details'}"
                     )
+
+                # Publish event → notification-service pushes patient
+                if affected_request and patient_user_id:
+                    try:
+                        from app.messaging.publisher import publish_blood_request_validation_rejected
+                        publish_blood_request_validation_rejected(
+                            request_id=affected_request.id,
+                            patient_user_id=patient_user_id,
+                            donor_id=donor.id,
+                            issue_category=data.issue_category,
+                        )
+                    except Exception as pub_exc:
+                        import logging
+                        logging.getLogger(__name__).warning(
+                            "Failed to publish blood_request.validation_rejected: %s", pub_exc
+                        )
 
         return ValidationReportOut.model_validate(report)
 

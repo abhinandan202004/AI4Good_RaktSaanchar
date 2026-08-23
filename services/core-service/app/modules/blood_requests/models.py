@@ -14,6 +14,7 @@ class RequestStatus(str, enum.Enum):
     fulfilled = "fulfilled"
     cancelled = "cancelled"
     escalated = "escalated"
+    validation_failed = "validation_failed"
 
 
 class AssignedBy(str, enum.Enum):
